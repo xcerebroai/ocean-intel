@@ -1,0 +1,29 @@
+Live verification PASS at 2026-05-05T18:34:38.630725+00:00
+
+Live URL: https://xcerebroai.github.io/ocean-intel/
+Schema: v2.0
+Source commit: 2aac55a
+
+Lead totals:
+  total leads: 79
+  total signals: 81
+  most stacked: 2
+
+Pattern counts:
+  foreclosure: 79
+  tax: 0
+  lien: 0
+  estate: 0
+  code: 0
+  transfer: 0
+  bankruptcy: 1
+  divorce: 0
+  eviction: 0
+  tired_landlord: 0
+  surplus_owed: 0
+
+Clerk ingest status:
+  configured: False
+  opra_records_total: 0
+  seeded_records_last_run: 0
+  seeded_session_age_hours: None
