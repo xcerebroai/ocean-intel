@@ -59,6 +59,18 @@ SOURCES: list[dict] = [
         "script": "scrapers/clerk_metadata.py",
         "supports_since": False,
     },
+    {
+        "name": "clerk_seeded",
+        "script": "scrapers/clerk_seeded.py",
+        "supports_since": True,
+        # Skip silently if CLERK_SESSION_COOKIES not set in .env
+        "needs_env": "CLERK_SESSION_COOKIES",
+    },
+    {
+        "name": "clerk_opra_ingest",
+        "script": "scrapers/clerk_opra_ingest.py",
+        "supports_since": False,
+    },
 ]
 
 
@@ -156,6 +168,27 @@ def check_heartbeat_staleness() -> None:
         telegram_send(msg)
 
 
+def check_clerk_session_age() -> None:
+    """Warn when seeded clerk session is 72-96h old (still valid but
+    re-seeding is recommended)."""
+    env = load_env()
+    seeded_at = env.get("CLERK_SESSION_SEEDED_AT") or os.environ.get("CLERK_SESSION_SEEDED_AT")
+    if not seeded_at:
+        return
+    try:
+        seeded = datetime.fromisoformat(seeded_at.replace("Z", "+00:00"))
+    except Exception:
+        return
+    age_h = (datetime.now(timezone.utc) - seeded).total_seconds() / 3600.0
+    if 72 <= age_h <= 96:
+        log_line(f"  clerk session age {age_h:.1f}h — re-seed recommended within 24h")
+        telegram_send(
+            f"<b>[ocean-intel]</b> Clerk seeded-session is {age_h:.1f}h old\n"
+            f"Re-seed within 24h to avoid expired pulls. See methodology -> "
+            f"\"Seeding the clerk session\"."
+        )
+
+
 # ----- Scraper subprocess wrapper ---------------------------------------------
 
 def run_scraper(src: dict, since_days: int | None, dry_run: bool, force_parcels: bool) -> tuple[bool, dict]:
@@ -172,11 +205,23 @@ def run_scraper(src: dict, since_days: int | None, dry_run: bool, force_parcels:
             log_line(f"  [{name}] SKIP (weekly cadence — Monday only)")
             return True, {"skipped": "weekly_cadence"}
 
+    # Skip if a required .env var is missing (clerk_seeded, etc.)
+    needs_env = src.get("needs_env")
+    if needs_env:
+        env = load_env()
+        if not (env.get(needs_env) or os.environ.get(needs_env)):
+            log_line(f"  [{name}] SKIP (env var {needs_env} not set)")
+            return True, {"skipped": "env_not_configured"}
+
     cmd = [PYTHON, str(script)]
     if src.get("supports_since") and since_days is not None and weekly_only_dow is None:
-        # Daily-source incremental window
-        since = (date.today() - timedelta(days=since_days)).isoformat()
-        cmd.extend(["--since", since])
+        # Daily-source incremental window — convert to --since-days for
+        # scrapers that take that arg, otherwise --since YYYY-MM-DD.
+        if name == "clerk_seeded":
+            cmd.extend(["--since-days", str(since_days)])
+        else:
+            since = (date.today() - timedelta(days=since_days)).isoformat()
+            cmd.extend(["--since", since])
 
     log_line(f"  [{name}] $ {' '.join(cmd[1:])}")
     if dry_run:
@@ -201,6 +246,19 @@ def run_scraper(src: dict, since_days: int | None, dry_run: bool, force_parcels:
         if proc.stderr:
             for line in proc.stderr.splitlines()[-5:]:
                 log_line(f"    ! {line}")
+        # Special case: clerk_seeded exits 4 when the session expires.
+        # Notify the operator with the re-seed instructions.
+        if name == "clerk_seeded" and proc.returncode == 4:
+            telegram_send(
+                "<b>[ocean-intel]</b> Clerk session EXPIRED\n"
+                "Re-seed in &lt;24h:\n"
+                "1) Open https://sng.co.ocean.nj.us/publicsearch/ in Chrome\n"
+                "2) Run any search to clear reCAPTCHA v3\n"
+                "3) DevTools -> Application -> Cookies -> copy ALL cookies as a single string\n"
+                "4) Paste into <code>.env</code> CLERK_SESSION_COOKIES=<i>...</i>\n"
+                "5) Update CLERK_SESSION_SEEDED_AT=<i>now</i>"
+            )
+            return False, {"error": "session_expired", "elapsed_s": elapsed}
         return False, {"error": f"exit {proc.returncode}", "elapsed_s": elapsed}
     log_line(f"  [{name}] OK ({elapsed:.0f}s)")
     return True, {"elapsed_s": elapsed}
@@ -348,6 +406,26 @@ def main() -> int:
 
     # Rule 16: heartbeat staleness check at start
     check_heartbeat_staleness()
+    check_clerk_session_age()
+
+    # First-of-month OPRA reminder (regenerate the request PDF and prompt the
+    # operator to sign + send). Best-effort — never fails the run.
+    if date.today().day == 1:
+        try:
+            opra_proc = subprocess.run(
+                [PYTHON, str(ROOT / "pipeline" / "opra_request.py"), "--standing"],
+                cwd=str(ROOT), capture_output=True, text=True, timeout=60,
+            )
+            if opra_proc.returncode == 0:
+                log_line("  OPRA monthly request PDF regenerated (day 1 of month)")
+                telegram_send(
+                    "<b>[ocean-intel]</b> Monthly OPRA reminder\n"
+                    "A fresh request PDF has been generated for last month's "
+                    "clerk records. Sign and email to John P. Kelly's office. "
+                    "See <code>opra_requests/</code>."
+                )
+        except Exception as e:
+            log_line(f"  OPRA reminder skipped: {e}")
 
     hb = load_heartbeat()
     failed: list[str] = []

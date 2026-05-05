@@ -397,31 +397,11 @@ def signals_from_civilview(records: Iterable[dict]) -> list[dict]:
     return out
 
 
-def signals_from_parcel_self(parcel: dict) -> list[dict]:
-    """Parcel-internal derived signals: nominal-consideration recent deeds."""
-    out: list[dict] = []
-    sale_price = parcel.get("sale_price")
-    deed_iso = deed_date_to_iso(parcel.get("deed_date_yymmdd"))
-    if sale_price is not None and isinstance(sale_price, (int, float)) and sale_price <= 10:
-        d = parse_iso(deed_iso) if deed_iso else None
-        # Use the transfer TTL window (1095 days = ~3 years).
-        if d is not None and (date.today() - d) <= timedelta(days=SIGNAL_TTL_DAYS["transfer"]):
-            out.append({
-                "_signal_id": f"parcel-nominal:{parcel.get('pid')}",
-                "pattern": "transfer",
-                "subtype": "Nominal-Consideration Sale",
-                "doc_type": "DEED_NOMINAL",
-                "source": "nj_modiv_parcels",
-                "date": deed_iso,
-                "payload": {
-                    "sale_price": sale_price,
-                    "deed_date": deed_iso,
-                    "deed_book": parcel.get("deed_book"),
-                    "deed_page": parcel.get("deed_page"),
-                    "sales_code": parcel.get("sales_code"),
-                },
-            })
-    return out
+# NOTE: signals_from_parcel_self() was removed in the v2.1 reset.
+# MOD-IV is enrichment, never a lead source. Nominal-consideration deed
+# sub-types fire only from clerk DEED records (with full grantor/grantee/
+# consideration metadata available to classify quitclaim / sheriff /
+# executor / administrator / deed-in-lieu sub-types).
 
 
 # =========================== Joining ==========================================
@@ -509,7 +489,8 @@ def build_lead(parcel: dict, signals: list[dict]) -> dict | None:
     if not pid:
         return None
 
-    all_signals = list(signals) + signals_from_parcel_self(parcel)
+    # MOD-IV is enrichment-only — the parcel itself does not generate signals.
+    all_signals = list(signals)
     all_signals = filter_expired(all_signals)
     if not all_signals:
         return None
@@ -696,15 +677,149 @@ def regression_check(prev: dict | None, header: dict) -> str | None:
 
 # =========================== Main =============================================
 
+def _load_clerk_records() -> list[dict]:
+    """Load clerk records from BOTH ingest paths.
+
+    Path A: data/raw/clerk_opra/*.jsonl (manual OPRA bulk ingest, normalized
+            by scrapers/clerk_opra_ingest.py)
+    Path B: data/raw/clerk_seeded_*.jsonl (operator-seeded session scraper)
+    """
+    out: list[dict] = []
+    opra_dir = RAW / "clerk_opra"
+    if opra_dir.exists():
+        for p in sorted(opra_dir.glob("*.jsonl")):
+            out.extend(load_jsonl(p))
+    for p in sorted(RAW.glob("clerk_seeded_*.jsonl")):
+        out.extend(load_jsonl(p))
+    return out
+
+
+def signals_from_clerk(records: Iterable[dict]) -> tuple[list[dict], list[dict]]:
+    """Convert clerk records (OPRA + seeded paths share schema) to signals.
+
+    Returns (positive_signals, negative_records). Negative records (DISCHLIS,
+    DISTSC, RLFESLEN, etc.) de-escalate prior positive signals attached to
+    the same parcel during the build pass.
+    """
+    positive: list[dict] = []
+    negatives: list[dict] = []
+    for r in records:
+        dtype = (r.get("doc_type") or "").upper()
+        if not dtype:
+            continue
+        if dtype in NEGATIVE_DOCTYPES:
+            negatives.append(r)
+            continue
+        mapping = DOCTYPE_TO_PATTERN_SUBTYPE.get(dtype)
+        if not mapping:
+            # Doc type not in our pattern map (e.g. UCC1, ASSGN, MORT) —
+            # tracked in raw archive but does not generate a lead.
+            continue
+        pattern, subtype = mapping
+        # DEED sub-type refinement: classify quitclaim / sheriff / executor /
+        # administrator / deed-in-lieu when the raw payload exposes it.
+        if dtype == "DEED":
+            grantor = " ".join(r.get("grantor") or []).upper() if isinstance(r.get("grantor"), list) else (r.get("grantor") or "").upper()
+            consid = r.get("consideration")
+            if "SHERIFF" in grantor:
+                subtype = "Sheriff's Deed"
+            elif any(tok in grantor for tok in ("EXECUTOR", "EXEC.", "EXEC,", " EXEC ")):
+                subtype = "Executor's Deed"
+            elif any(tok in grantor for tok in ("ADMINISTRATOR", "ADMIN.", "ADMIN,", " ADMR ")):
+                subtype = "Administrator's Deed"
+            elif "ESTATE OF" in grantor:
+                subtype = "Estate Deed"
+            elif consid is not None and isinstance(consid, (int, float)) and consid <= 10:
+                subtype = "Quitclaim/Nominal Deed"
+            else:
+                subtype = "Deed"
+        sig = {
+            "_signal_id": r.get("_key") or r.get("instrument_number"),
+            "pattern": pattern,
+            "subtype": subtype,
+            "doc_type": dtype,
+            "source": r.get("_source") or "clerk",
+            "date": r.get("recording_date") or r.get("date"),
+            "block": r.get("block"),
+            "lot": r.get("lot"),
+            "qualifier": r.get("qualifier"),
+            "mun_name": r.get("mun_name"),
+            "case_no": r.get("case_no"),
+            "instrument_number": r.get("instrument_number"),
+            "book": r.get("book"),
+            "page": r.get("page"),
+            "amount": r.get("lien_amount") or r.get("consideration"),
+            "grantor": r.get("grantor"),
+            "grantee": r.get("grantee"),
+            "payload": r.get("raw_payload") or {k: v for k, v in r.items() if not k.startswith("_")},
+        }
+        positive.append(sig)
+    return positive, negatives
+
+
+def apply_clerk_negatives(parcel_signals: dict[str, list[dict]], negatives: list[dict], parcels: dict[str, dict]) -> int:
+    """De-escalation pass: when a clerk DISCHLIS / DISTSC / etc. is recorded
+    AFTER a matching positive signal on the same parcel, mark the positive
+    discharged. Returns count of de-escalations applied."""
+    applied = 0
+    if not negatives:
+        return 0
+    # Map negative doc type → which patterns it discharges
+    DISCHARGE_MAP = {
+        "DISCHLIS": "foreclosure",
+        "DISTSC": "tax",
+        "RLFESLEN": "tax",
+        "DSCOLIEN": "lien",
+        "DSMELIEN": "lien",
+        "DMECHNOI": "lien",
+        "DPHYLIEN": "lien",
+        "DSJUDLIEN": "lien",
+        "WARSATFN": "lien",
+    }
+    # Build lookup: (mun, block, lot) -> pid (same as attach_signals)
+    by_mbl: dict[tuple, str] = {}
+    for pid, parcel in parcels.items():
+        mun = normalize_mun(parcel.get("mun_name"))
+        block = (parcel.get("block") or "").strip()
+        lot = (parcel.get("lot") or "").strip()
+        if mun and block and lot:
+            by_mbl[(mun, block, lot)] = pid
+    for n in negatives:
+        dtype = (n.get("doc_type") or "").upper()
+        target_pat = DISCHARGE_MAP.get(dtype)
+        if not target_pat:
+            continue
+        mun = normalize_mun(n.get("mun_name"))
+        block = (n.get("block") or "").strip()
+        lot = (n.get("lot") or "").strip()
+        first_lot = lot.split()[0].rstrip(",") if lot else lot
+        pid = by_mbl.get((mun, block, first_lot))
+        if not pid or pid not in parcel_signals:
+            continue
+        n_date = n.get("recording_date") or n.get("date") or ""
+        for s in parcel_signals[pid]:
+            if s.get("pattern") != target_pat:
+                continue
+            s_date = s.get("date") or ""
+            if n_date and s_date and n_date >= s_date:
+                s["discharged"] = True
+                s["discharged_date"] = n_date
+                s["discharged_doc_type"] = dtype
+                applied += 1
+    return applied
+
+
 def build(out_path: Path = LEADS_PATH, fail_on_regression: bool = True) -> dict:
     parcels_raw = load_jsonl(RAW / "nj_modiv_parcels.jsonl")
     sheriff_raw = load_jsonl(RAW / "sheriff_foreclosures_writ_of_sale.jsonl")
     civilview_raw = load_jsonl(RAW / "civilview_sales_sheriff_sale_listing.jsonl")
     clerk_meta = load_jsonl(RAW / "clerk_metadata_heartbeat.jsonl")
+    clerk_records = _load_clerk_records()
 
     print(f"  parcels:    {len(parcels_raw):,}", flush=True)
     print(f"  sheriff:    {len(sheriff_raw):,}", flush=True)
     print(f"  civilview:  {len(civilview_raw):,}", flush=True)
+    print(f"  clerk recs: {len(clerk_records):,}", flush=True)
     print(f"  clerk meta: {len(clerk_meta):,}", flush=True)
 
     parcels: dict[str, dict] = {}
@@ -716,13 +831,17 @@ def build(out_path: Path = LEADS_PATH, fail_on_regression: bool = True) -> dict:
     ext: list[dict] = []
     ext.extend(signals_from_sheriff(sheriff_raw))
     ext.extend(signals_from_civilview(civilview_raw))
+    clerk_pos, clerk_neg = signals_from_clerk(clerk_records)
+    ext.extend(clerk_pos)
 
     parcel_signals, orphans = attach_signals(parcels, ext)
+    discharged = apply_clerk_negatives(parcel_signals, clerk_neg, parcels)
     print(f"  attached signals: {sum(len(v) for v in parcel_signals.values()):,} on {len(parcel_signals):,} parcels", flush=True)
     print(f"  orphan signals:   {len(orphans):,}", flush=True)
+    print(f"  clerk negatives:  {len(clerk_neg):,} (de-escalations applied: {discharged})", flush=True)
 
     records: list[dict] = []
-    # Pass 1: signal-bearing parcels
+    # Pass 1: signal-bearing parcels (sheriff + clerk events, all enriched with MOD-IV)
     for pid in parcel_signals:
         parcel = parcels.get(pid)
         if not parcel:
@@ -730,15 +849,10 @@ def build(out_path: Path = LEADS_PATH, fail_on_regression: bool = True) -> dict:
         lead = build_lead(parcel, parcel_signals[pid])
         if lead:
             records.append(lead)
-    # Pass 2: parcel-internal-only firing leads (e.g. nominal deed transfer)
-    seen_pids = {r["pid"] for r in records}
-    for pid, parcel in parcels.items():
-        if pid in seen_pids:
-            continue
-        lead = build_lead(parcel, [])
-        if lead:
-            records.append(lead)
-    # Pass 3: orphan signals
+    # NOTE (v2.1 reset): the v2.0 "Pass 2" generated leads from MOD-IV alone
+    # (nominal-consideration deeds). That was wrong — MOD-IV is enrichment,
+    # not a lead source. Pass 2 is removed.
+    # Pass 3: orphan signals (events that couldn't join to a parcel)
     for o in orphans:
         l = build_orphan_lead(o)
         if l:
@@ -809,6 +923,38 @@ def build(out_path: Path = LEADS_PATH, fail_on_regression: bool = True) -> dict:
 
     clerk_heartbeat = (clerk_meta or [{}])[-1] if clerk_meta else {}
 
+    # Clerk ingest status (Phase 1 deliverable — visibility into both unblock paths)
+    opra_dir = RAW / "clerk_opra"
+    opra_files = sorted(opra_dir.glob("*.jsonl")) if opra_dir.exists() else []
+    seeded_files = sorted(RAW.glob("clerk_seeded_*.jsonl"))
+    opra_total = sum(1 for p in opra_files for _ in p.read_text(encoding="utf-8").splitlines() if _) if opra_files else 0
+    seeded_total = sum(1 for p in seeded_files for _ in p.read_text(encoding="utf-8").splitlines() if _) if seeded_files else 0
+
+    def _newest_mtime(paths):
+        if not paths:
+            return None
+        return datetime.fromtimestamp(max(p.stat().st_mtime for p in paths), tz=timezone.utc).isoformat()
+
+    seeded_seeded_at = os.environ.get("CLERK_SESSION_SEEDED_AT") or ""
+    seeded_age_h = None
+    if seeded_seeded_at:
+        try:
+            seeded_age_h = round(
+                (datetime.now(timezone.utc) - datetime.fromisoformat(seeded_seeded_at.replace("Z", "+00:00"))).total_seconds() / 3600.0,
+                1,
+            )
+        except Exception:
+            seeded_age_h = None
+
+    clerk_ingest_status = {
+        "opra_last_received": _newest_mtime(opra_files),
+        "opra_records_total": opra_total,
+        "seeded_last_run": _newest_mtime(seeded_files),
+        "seeded_records_last_run": seeded_total,
+        "seeded_session_age_hours": seeded_age_h,
+        "configured": bool(opra_files or seeded_files or seeded_seeded_at),
+    }
+
     header = {
         "schema_version": SCHEMA_VERSION,
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -835,6 +981,7 @@ def build(out_path: Path = LEADS_PATH, fail_on_regression: bool = True) -> dict:
             "lastDocumentRecordedInfo": clerk_heartbeat.get("lastDocumentRecordedInfo"),
             "fetched_at": clerk_heartbeat.get("fetched_at"),
         },
+        "clerk_ingest_status": clerk_ingest_status,
     }
 
     # Two-Truths

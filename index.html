@@ -20,7 +20,6 @@
   --good: #10b981;
   --shadow-glow: 0 0 16px rgba(59, 130, 246, 0.30);
 
-  /* Lead-type chip colors (locked palette) */
   --c-foreclosure:    #EF4444;
   --c-tax:            #F59E0B;
   --c-lien:           #EAB308;
@@ -40,6 +39,10 @@ a { color: var(--accent); text-decoration: none; }
 a:hover { color: var(--accent-hover); }
 button { font-family: inherit; }
 
+/* CRITICAL ERROR BANNER */
+#error-banner { display: none; background: #7f1d1d; color: #fef2f2; border: 1px solid #ef4444; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px; font-family: Consolas, monospace; font-size: 12px; white-space: pre-wrap; }
+#error-banner.visible { display: block; }
+
 /* HEADER */
 header.top { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
 header.top h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
@@ -53,32 +56,35 @@ header.top .meta a { margin-left: 14px; }
 .stat-row .stat-tile:hover { border-color: var(--accent); }
 .stat-row .stat-tile.active { background: rgba(59, 130, 246, 0.15); border-color: var(--accent); box-shadow: var(--shadow-glow); }
 .stat-row .stat-tile.total { background: var(--panel-2); cursor: default; font-weight: 600; }
-.stat-row .stat-tile .label { color: var(--text-muted); margin-right: 6px; }
 .stat-row .stat-tile.total .label { color: var(--text); }
+.stat-row .stat-tile.dimmed { opacity: 0.45; cursor: help; }
+.stat-row .stat-tile.dimmed:hover { opacity: 0.75; border-color: var(--border); box-shadow: none; }
+.stat-row .stat-tile .label { color: var(--text-muted); margin-right: 6px; }
 .stat-row .stat-tile .value { font-weight: 700; }
 .stat-row.qa { color: var(--text-muted); padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
 .stat-row.qa .stat-tile { cursor: default; padding: 4px 8px; }
 
 /* PRE-CANNED VIEWS */
 .precanned { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0 12px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
-.precanned button { background: var(--panel); border: 1px solid var(--border); color: var(--text); padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all .12s; }
+.precanned button { background: var(--panel); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all .12s; }
 .precanned button:hover { border-color: var(--accent); box-shadow: var(--shadow-glow); }
+.precanned button .pc-count { color: var(--text-muted); margin-left: 4px; font-size: 11px; }
 
 /* MAIN LAYOUT */
 .layout { display: grid; grid-template-columns: 280px 1fr; gap: 16px; }
 
-/* FILTER RAIL (sticky left) */
+/* FILTER RAIL */
 aside.filters { position: sticky; top: 12px; align-self: start; max-height: calc(100vh - 24px); overflow-y: auto; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-size: 13px; }
 aside.filters h3 { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; margin-top: 14px; }
 aside.filters h3:first-child { margin-top: 0; }
 
 aside.filters .pat-group { margin-bottom: 4px; border-radius: 4px; }
+aside.filters .pat-group.dimmed { opacity: 0.5; }
 aside.filters .pat-row { display: flex; align-items: center; gap: 6px; padding: 4px 0; cursor: pointer; user-select: none; }
 aside.filters .pat-row input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
 aside.filters .pat-row .swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
 aside.filters .pat-row .pat-name { flex: 1; }
 aside.filters .pat-row .pat-count { color: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
-aside.filters .pat-row .toggle-expand { color: var(--text-muted); cursor: pointer; padding: 0 4px; }
 aside.filters .subtypes { padding-left: 22px; padding-bottom: 4px; }
 aside.filters .subtype-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; font-size: 12px; cursor: pointer; user-select: none; }
 aside.filters .subtype-row input { accent-color: var(--accent); cursor: pointer; }
@@ -87,12 +93,13 @@ aside.filters .subtype-row .sub-count { color: var(--text-muted); font-size: 11p
 aside.filters .toggle { display: flex; align-items: center; gap: 6px; padding: 4px 0; cursor: pointer; user-select: none; }
 aside.filters .toggle input { accent-color: var(--accent); cursor: pointer; }
 aside.filters .toggle .attr-count { color: var(--text-muted); margin-left: auto; font-size: 11px; }
+aside.filters .toggle.dimmed { opacity: 0.5; }
 
 aside.filters .slider-block { padding: 6px 0; }
 aside.filters .slider-block label { color: var(--text-muted); display: block; font-size: 11px; margin-bottom: 4px; }
 aside.filters .slider-block .slider-row { display: flex; align-items: center; gap: 6px; }
 aside.filters input[type="range"] { flex: 1; accent-color: var(--accent); }
-aside.filters .slider-val { font-variant-numeric: tabular-nums; min-width: 36px; text-align: right; font-weight: 500; }
+aside.filters .slider-val { font-variant-numeric: tabular-nums; min-width: 40px; text-align: right; font-weight: 500; }
 
 aside.filters .match-mode { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
 aside.filters .match-mode button { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); padding: 6px 0; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all .12s; }
@@ -112,20 +119,27 @@ main.content { min-width: 0; }
 .content-toolbar button.cta:hover { background: var(--accent-hover); }
 .content-toolbar .results-count { color: var(--text-muted); font-size: 12px; min-width: 140px; }
 
-/* TABLE */
-.table-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-table.leads { width: 100%; border-collapse: collapse; }
-table.leads th, table.leads td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
-table.leads th { background: var(--panel-2); color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; font-size: 11px; cursor: pointer; user-select: none; white-space: nowrap; }
-table.leads th .si { color: var(--accent); margin-left: 4px; font-size: 10px; }
-table.leads tbody tr.lead-row { cursor: pointer; transition: background .08s; }
-table.leads tbody tr.lead-row:hover { background: rgba(59, 130, 246, 0.06); }
-table.leads tbody tr.expanded { background: rgba(59, 130, 246, 0.10); }
-table.leads tbody tr.expand-row { background: var(--panel-2); cursor: default; }
-table.leads tbody tr.expand-row td { padding: 14px 20px; }
+/* LEAD CARDS (table-driven for dense scanning) */
+.cards-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.lead-row { display: grid; grid-template-columns: 1.4fr 1.1fr 1.6fr; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .08s; align-items: start; }
+.lead-row:hover { background: rgba(59, 130, 246, 0.05); }
+.lead-row.expanded { background: rgba(59, 130, 246, 0.10); }
+.lead-row.expand { background: var(--panel-2); cursor: default; padding: 18px 22px; grid-template-columns: 1fr; }
+.col { min-width: 0; }
+.col .pid { font-weight: 700; font-size: 13px; }
+.col .pid-sub { color: var(--text-muted); font-size: 11px; }
+.col .situs { font-size: 13px; margin-top: 4px; }
+.col .owner { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+.col .mailing { color: var(--text-muted); font-size: 11px; margin-top: 2px; font-style: italic; }
+.col .mun { color: var(--text-muted); font-size: 11px; }
+.col .yo { color: var(--text-muted); font-size: 11px; margin-top: 4px; }
+.col .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.col .icons { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.col .signal-when { font-size: 12px; }
+.col .amount { font-weight: 600; font-size: 13px; margin-top: 4px; }
+.col .defendant { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+.col .vals { color: var(--text-muted); font-size: 11px; margin-top: 4px; }
 
-/* CHIPS */
-.chip-strip, .icon-strip { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .chip { display: inline-block; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; line-height: 1.4; cursor: default; }
 .chip.foreclosure { background: var(--c-foreclosure); }
 .chip.tax { background: var(--c-tax); }
@@ -138,15 +152,13 @@ table.leads tbody tr.expand-row td { padding: 14px 20px; }
 .chip.eviction { background: var(--c-eviction); color: #1F2937; }
 .chip.tired_landlord { background: var(--c-tired_landlord); }
 .chip.surplus_owed { background: var(--c-surplus_owed); }
+.chip.discharged { opacity: 0.4; text-decoration: line-through; }
 
-/* ICONS */
-.icon-strip svg { stroke: var(--accent); width: 16px; height: 16px; flex-shrink: 0; opacity: 0.95; }
-.icon-strip .ic { display: inline-flex; cursor: help; }
+.icons svg { stroke: var(--accent); width: 16px; height: 16px; flex-shrink: 0; opacity: 0.95; }
+.icons .ic { display: inline-flex; cursor: help; }
 
-/* NEW BADGE */
 .new-badge { display: inline-block; background: var(--good); color: #fff; padding: 1px 6px; border-radius: 3px; font-size: 10px; margin-right: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 
-/* SIGNAL BLOCK */
 .signal-block { border-left: 3px solid var(--accent); padding: 10px 12px; margin: 8px 0; background: rgba(15, 23, 42, 0.55); border-radius: 0 4px 4px 0; }
 .signal-block .signal-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
 .signal-block .signal-head strong { font-size: 13px; }
@@ -159,15 +171,19 @@ table.leads tbody tr.expand-row td { padding: 14px 20px; }
 
 footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 12px; text-align: center; }
 .empty-state { text-align: center; padding: 30px 16px; color: var(--text-muted); background: var(--panel); border: 1px solid var(--border); border-radius: 8px; }
-.error-state { background: rgba(239, 68, 68, 0.10); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-family: monospace; font-size: 12px; }
 
 @media (max-width: 1100px) {
   .layout { grid-template-columns: 1fr; }
   aside.filters { position: static; max-height: unset; }
 }
+@media (max-width: 720px) {
+  .lead-row { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
+
+<div id="error-banner"></div>
 
 <header class="top">
   <h1>Ocean County, NJ <span class="sub">Property Intelligence</span></h1>
@@ -184,14 +200,7 @@ footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--border
 <div class="stat-row" id="stats-leadtypes"></div>
 <div class="stat-row qa" id="stats-quality"></div>
 
-<div class="precanned">
-  <button data-precanned="highest_stack">Highest stack</button>
-  <button data-precanned="recent_foreclosures">Recent foreclosures</button>
-  <button data-precanned="tax_vacant">Tax + vacant</button>
-  <button data-precanned="estate_absentee">Estate + absentee</button>
-  <button data-precanned="code_oos">Code + out-of-state</button>
-  <button data-precanned="longterm_fnc">Long-term + free-and-clear</button>
-</div>
+<div class="precanned" id="precanned-row"></div>
 
 <div class="layout">
   <aside class="filters">
@@ -246,21 +255,7 @@ footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--border
       <span class="results-count" id="results-count">Loading…</span>
     </div>
 
-    <div class="table-wrap">
-      <table class="leads" id="leads-table">
-        <thead>
-          <tr>
-            <th data-sort="pid">PID</th>
-            <th data-sort="situs_address">Situs</th>
-            <th data-sort="owner">Owner</th>
-            <th>Attributes</th>
-            <th>Lead types</th>
-            <th data-sort="last_signal_date">Last signal</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
+    <div class="cards-wrap" id="cards-wrap"></div>
   </main>
 </div>
 
@@ -269,7 +264,6 @@ footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--border
   <div style="margin-top:6px">⚡ Built by Jarvis (Just Jarvis LLC) for Quentin Flores. Operator-first.</div>
 </footer>
 
-<!-- Lucide-style inline SVG icon defs (16x16) -->
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none;">
   <symbol id="i-vacant" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 2 20 20"/><path d="M21 9v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V11"/><path d="M3 9v0a2 2 0 0 1 .8-1.6l8.5-6.4a3 3 0 0 1 1.4-.7"/><path d="M14.5 4.5 21 9.5"/></symbol>
   <symbol id="i-absentee" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><line x1="17" y1="8" x2="22" y2="13"/><line x1="22" y1="8" x2="17" y2="13"/></symbol>
@@ -283,18 +277,32 @@ footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--border
 </svg>
 
 <script>
-// =============== STATE ====================================================
+"use strict";
+
+// =============== Error capture ============================================
+window.addEventListener("error", (e) => showError(`JS error: ${e.message}\n${e.filename}:${e.lineno}`));
+window.addEventListener("unhandledrejection", (e) => showError(`Promise rejection: ${e.reason}`));
+function showError(msg) {
+  try {
+    const el = document.getElementById("error-banner");
+    if (!el) return;
+    el.classList.add("visible");
+    el.textContent = (el.textContent ? el.textContent + "\n" : "") + msg;
+  } catch (_) { /* swallow — error handler must not throw */ }
+}
+
+// =============== State ====================================================
 let RAW = null;
 let RECORDS = [];
 const filters = {
   patterns: new Set(),
-  subtypes: new Set(),       // entries are "pattern:subtype" strings
+  subtypes: new Set(),
   attributes: new Set(),
   match_mode: "ANY",
   search: "",
   minYearsOwned: 0,
   minAssessed: 0,
-  maxAssessed: 0,            // 0 = no cap
+  maxAssessed: 0,
 };
 let sort_key = "last_signal_date_desc";
 
@@ -313,102 +321,171 @@ const ATTR_DISPLAY = {
   entity_owned: "Entity-owned", multiple_properties: "Multiple properties",
 };
 
-// ============ THE matches() FUNCTION (single source of truth) =============
-// Used for stat counts AND rendered table. Two-Truths invariant.
+// Operator-realistic pre-canned views (replaces v2 academic set)
+const PRECANNED_VIEWS = [
+  { id: "sheriff_calls",    label: "Sheriff sales — call list", patterns: ["foreclosure"], attributes: [], mode: "ANY",
+    sort: "last_signal_date_desc",
+    description: "All sheriff sale leads, sorted by upcoming sale date." },
+  { id: "estate_absentee",  label: "Estate-owned + absentee",   patterns: ["estate"], attributes: ["absentee"], mode: "ALL",
+    sort: "last_signal_date_desc",
+    description: "Properties recently transferred to/from estates whose mailing address differs from the situs." },
+  { id: "tax_longterm",     label: "Tax distress + long-term owner", patterns: ["tax"], attributes: ["long_term_owned"], mode: "ALL",
+    sort: "years_owned_desc",
+    description: "Tax-distress filings on parcels owned 15+ years — high-equity targets." },
+  { id: "out_of_state",     label: "Out-of-state landlord",     patterns: [], attributes: ["out_of_state"], mode: "ANY",
+    sort: "assessed_desc",
+    description: "Any lead with an out-of-state mailing address — tired-landlord precursor." },
+  { id: "lien_entity",      label: "Construction lien + entity owner", patterns: ["lien"], attributes: ["entity_owned"], mode: "ALL",
+    sort: "last_signal_date_desc",
+    description: "Construction/mechanic's liens on entity-owned parcels — stalled-rehab targets." },
+  { id: "transfer_estate",  label: "Recently transferred to estate",   patterns: ["transfer", "estate"], attributes: [], mode: "ALL",
+    sort: "last_signal_date_desc",
+    description: "Properties whose recent deed shows estate-related transfer — heir leads." },
+];
+
+// =============== matches() — single source of truth =======================
 function matches(lead) {
-  // Search
   if (filters.search) {
     const blob = [
       lead.owner, lead.situs_address, lead.mailing_address, lead.pid,
       lead.mun_name,
-      ...((lead.signals || []).map(s => [s.case_no, s.foreclosure_no, s.plaintiff, s.defendant, JSON.stringify(s.payload || {})].join(" "))),
+      ...((lead.signals || []).map(s => [
+        s.case_no, s.foreclosure_no, s.plaintiff, s.defendant,
+        s.instrument_number, s.book, s.page,
+        Array.isArray(s.grantor) ? s.grantor.join(" ") : (s.grantor || ""),
+        Array.isArray(s.grantee) ? s.grantee.join(" ") : (s.grantee || ""),
+        JSON.stringify(s.payload || {}),
+      ].join(" "))),
     ].join(" ").toLowerCase();
     if (!blob.includes(filters.search.toLowerCase())) return false;
   }
-
-  // Numeric filters (always-on)
   if (filters.minYearsOwned > 0) {
-    if ((lead.years_owned ?? 0) < filters.minYearsOwned) return false;
+    if ((lead.years_owned || 0) < filters.minYearsOwned) return false;
   }
   if (filters.minAssessed > 0) {
-    if ((lead.assessed_value ?? 0) < filters.minAssessed) return false;
+    if ((lead.assessed_value || 0) < filters.minAssessed) return false;
   }
   if (filters.maxAssessed > 0) {
-    if ((lead.assessed_value ?? Infinity) > filters.maxAssessed) return false;
+    if (lead.assessed_value !== null && lead.assessed_value !== undefined && lead.assessed_value > filters.maxAssessed) return false;
   }
-
-  // Match-mode against checked patterns + subtypes + attributes.
   const total_checked = filters.patterns.size + filters.subtypes.size + filters.attributes.size;
   if (total_checked === 0) return true;
-
   let matched = 0;
-  for (const p of filters.patterns) {
-    if ((lead.patterns || []).includes(p)) matched++;
-  }
-  for (const a of filters.attributes) {
-    if ((lead.attributes || []).includes(a)) matched++;
-  }
+  for (const p of filters.patterns) if ((lead.patterns || []).includes(p)) matched++;
+  for (const a of filters.attributes) if ((lead.attributes || []).includes(a)) matched++;
   for (const pair of filters.subtypes) {
     const i = pair.indexOf(":");
     const pat = pair.slice(0, i), sub = pair.slice(i + 1);
     if ((lead.signals || []).some(s => s.pattern === pat && s.subtype === sub)) matched++;
   }
-
   if (filters.match_mode === "ALL") return matched === total_checked;
   if (filters.match_mode === "2+")  return matched >= 2;
   if (filters.match_mode === "3+")  return matched >= 3;
-  return matched >= 1;  // ANY
+  return matched >= 1;
 }
 
-// =============== RENDERING ================================================
+// =============== Helpers ==================================================
+function fmtMoney(v) { if (v === null || v === undefined || v === "") return "—"; const n = Number(v); if (isNaN(n)) return v; return "$" + n.toLocaleString(); }
+function escapeHtml(s) { if (s === null || s === undefined) return ""; return String(s).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch])); }
+function escapeAttr(s) { return escapeHtml(s).replace(/`/g, "&#96;"); }
+function safeObj(v) { return v && typeof v === "object" ? v : {}; }
+function safeArr(v) { return Array.isArray(v) ? v : []; }
+function fmtRelative(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  const days = Math.round((Date.now() - d.getTime()) / (24*3600*1000));
+  if (days < -1) return `in ${-days}d`;
+  if (days <= 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 30) return `${days}d ago`;
+  if (days < 365) return `${Math.round(days/30)}mo ago`;
+  return `${Math.round(days/365)}y ago`;
+}
+
+// =============== Renderers ================================================
 function renderHeader() {
   const m = document.getElementById("m-refresh");
   const refreshAt = RAW.generated_at ? new Date(RAW.generated_at).toLocaleString() : "—";
   m.textContent = `Last refresh: ${refreshAt}`;
   const sa = document.getElementById("m-source-attribution");
-  sa.innerHTML = `Source commit: <code>${RAW.source_commit || "—"}</code> · schema v${RAW.schema_version || "?"}`;
+  sa.innerHTML = `Source commit: <code>${escapeHtml(RAW.source_commit || "—")}</code> · schema v${escapeHtml(RAW.schema_version || "?")}`;
   const ft = document.getElementById("footer-content");
-  ft.innerHTML = `Generated ${refreshAt} · Source commit <code>${RAW.source_commit || "—"}</code> · ${(RAW.parcel_total || 0).toLocaleString()} parcels indexed · <a href="methodology.html">Methodology</a>`;
+  ft.innerHTML = `Generated ${escapeHtml(refreshAt)} · Source commit <code>${escapeHtml(RAW.source_commit || "—")}</code> · ${(RAW.parcel_total || 0).toLocaleString()} parcels indexed · <a href="methodology.html">Methodology</a>`;
 }
 
 function renderLeadTypeStats(filtered) {
   const counts = {};
   for (const p of PATTERN_NAMES) counts[p] = 0;
-  for (const r of filtered) for (const p of (r.patterns || [])) counts[p] = (counts[p] || 0) + 1;
+  for (const r of filtered) for (const p of safeArr(r.patterns)) counts[p] = (counts[p] || 0) + 1;
+  const totalCounts = safeObj(RAW.pattern_counts);
   const row = document.getElementById("stats-leadtypes");
   let html = `<div class="stat-tile total"><span class="label">Total:</span><span class="value">${filtered.length.toLocaleString()}</span></div>`;
   for (const p of PATTERN_NAMES) {
-    const active = filters.patterns.has(p) ? " active" : "";
-    html += `<div class="stat-tile${active}" data-stat-pattern="${p}"><span class="label">${PATTERN_DISPLAY[p]}:</span><span class="value">${counts[p].toLocaleString()}</span></div>`;
+    const totalCount = totalCounts[p] || 0;
+    const isDimmed = totalCount === 0 ? " dimmed" : "";
+    const isActive = filters.patterns.has(p) ? " active" : "";
+    const tooltip = totalCount === 0
+      ? `${PATTERN_DISPLAY[p]} (0) — no clerk data ingested yet. See methodology for unblocking paths (OPRA + seeded session).`
+      : `${PATTERN_DISPLAY[p]}: ${counts[p]} of ${totalCount} matching current filters`;
+    html += `<div class="stat-tile${isActive}${isDimmed}" data-stat-pattern="${p}" title="${escapeAttr(tooltip)}"><span class="label">${PATTERN_DISPLAY[p]}:</span><span class="value">${counts[p].toLocaleString()}</span></div>`;
   }
   row.innerHTML = html;
 }
 
 function renderQualityStats(filtered) {
-  const total_signals = filtered.reduce((a, r) => a + (r.signals || []).length, 0);
+  const total_signals = filtered.reduce((a, r) => a + safeArr(r.signals).length, 0);
   const new24 = filtered.filter(r => r.is_new_in_24h).length;
   const max_stack = filtered.reduce((m, r) => Math.max(m, r.pattern_count || 0), 0);
-  const heart = RAW.clerk_heartbeat || {};
+  const ingest = safeObj(RAW.clerk_ingest_status);
+  const heart = safeObj(RAW.clerk_heartbeat);
+  const ingestText = ingest.configured
+    ? (`OPRA: ${ingest.opra_records_total || 0} · seeded: ${ingest.seeded_records_last_run || 0}` + (ingest.seeded_session_age_hours !== null && ingest.seeded_session_age_hours !== undefined ? ` (${ingest.seeded_session_age_hours}h)` : ""))
+    : "Clerk ingest: not configured (see methodology — OPRA / seeded session)";
   const row = document.getElementById("stats-quality");
   row.innerHTML = `
     <div class="stat-tile"><span class="label">Total signals:</span><span class="value">${total_signals.toLocaleString()}</span></div>
     <div class="stat-tile"><span class="label">New (24h):</span><span class="value">${new24}</span></div>
     <div class="stat-tile"><span class="label">Most stacked:</span><span class="value">${max_stack}</span></div>
     <div class="stat-tile"><span class="label">Clerk index:</span><span class="value">${escapeHtml(heart.lastDocumentRecordedInfo || "—")}</span></div>
+    <div class="stat-tile" title="${escapeAttr(ingestText)}"><span class="label">Clerk ingest:</span><span class="value">${escapeHtml(ingestText)}</span></div>
   `;
 }
 
+function renderPrecanned(filtered) {
+  const row = document.getElementById("precanned-row");
+  // Compute count for each view by running its filter set against RECORDS
+  const html = PRECANNED_VIEWS.map(v => {
+    const tmp = {
+      patterns: new Set(v.patterns),
+      subtypes: new Set(),
+      attributes: new Set(v.attributes),
+      match_mode: v.mode,
+      search: "",
+      minYearsOwned: 0, minAssessed: 0, maxAssessed: 0,
+    };
+    let count = 0;
+    const saved = { p: filters.patterns, s: filters.subtypes, a: filters.attributes, m: filters.match_mode, sr: filters.search, my: filters.minYearsOwned, ma: filters.minAssessed, mx: filters.maxAssessed };
+    Object.assign(filters, tmp);
+    for (const r of RECORDS) if (matches(r)) count++;
+    filters.patterns = saved.p; filters.subtypes = saved.s; filters.attributes = saved.a; filters.match_mode = saved.m; filters.search = saved.sr; filters.minYearsOwned = saved.my; filters.minAssessed = saved.ma; filters.maxAssessed = saved.mx;
+    return `<button data-precanned="${v.id}" title="${escapeAttr(v.description)}">${escapeHtml(v.label)} <span class="pc-count">(${count})</span></button>`;
+  }).join("");
+  row.innerHTML = html;
+}
+
 function renderFilterRail() {
-  // Lead-type checkboxes (no expand for now — subtypes inline)
-  const subTotalsByPat = {};
-  for (const p of PATTERN_NAMES) subTotalsByPat[p] = (RAW.lead_type_subtype_counts || {})[p] || {};
+  const subTotalsByPat = safeObj(RAW.lead_type_subtype_counts);
+  const patCounts = safeObj(RAW.pattern_counts);
+  const attrCounts = safeObj(RAW.attribute_counts);
   const patEl = document.getElementById("filter-patterns");
   patEl.innerHTML = PATTERN_NAMES.map(p => {
     const checked = filters.patterns.has(p) ? "checked" : "";
-    const count = (RAW.pattern_counts || {})[p] || 0;
-    const subs = subTotalsByPat[p];
+    const count = patCounts[p] || 0;
+    const dimmed = count === 0 ? " dimmed" : "";
+    const subs = safeObj(subTotalsByPat[p]);
     const subKeys = Object.keys(subs);
-    return `<div class="pat-group" data-pat="${p}">
+    return `<div class="pat-group${dimmed}" data-pat="${p}">
       <label class="pat-row">
         <input type="checkbox" data-pattern="${p}" ${checked}/>
         <span class="swatch" style="background: var(--c-${p})"></span>
@@ -423,13 +500,12 @@ function renderFilterRail() {
         </label>`).join("")}</div>` : ""}
     </div>`;
   }).join("");
-
-  // Attributes
   const attrEl = document.getElementById("filter-attributes");
   attrEl.innerHTML = ATTR_NAMES.map(a => {
     const checked = filters.attributes.has(a) ? "checked" : "";
-    const count = (RAW.attribute_counts || {})[a] || 0;
-    return `<label class="toggle">
+    const count = attrCounts[a] || 0;
+    const dimmed = count === 0 ? " dimmed" : "";
+    return `<label class="toggle${dimmed}">
       <input type="checkbox" data-attribute="${a}" ${checked}/>
       <span>${ATTR_DISPLAY[a]}</span>
       <span class="attr-count">${count}</span>
@@ -437,54 +513,69 @@ function renderFilterRail() {
   }).join("");
 }
 
-function renderTable(filtered) {
-  const tbody = document.getElementById("tbody");
+function renderCards(filtered) {
+  const wrap = document.getElementById("cards-wrap");
   const sorted = [...filtered];
   sorted.sort((a, b) => {
     if (sort_key === "last_signal_date_desc") return (b.last_signal_date || "").localeCompare(a.last_signal_date || "");
     if (sort_key === "pattern_count_desc")    return (b.pattern_count || 0) - (a.pattern_count || 0);
-    if (sort_key === "years_owned_desc")      return (b.years_owned ?? -1) - (a.years_owned ?? -1);
-    if (sort_key === "years_owned_asc")       return (a.years_owned ?? Infinity) - (b.years_owned ?? Infinity);
-    if (sort_key === "assessed_desc")         return (b.assessed_value ?? 0) - (a.assessed_value ?? 0);
+    if (sort_key === "years_owned_desc")      return (b.years_owned || -1) - (a.years_owned || -1);
+    if (sort_key === "years_owned_asc")       return (a.years_owned == null ? Infinity : a.years_owned) - (b.years_owned == null ? Infinity : b.years_owned);
+    if (sort_key === "assessed_desc")         return (b.assessed_value || 0) - (a.assessed_value || 0);
     if (sort_key === "situs_asc")             return (a.situs_address || "").localeCompare(b.situs_address || "");
     return 0;
   });
-
   const MAX = 800;
   const display = sorted.slice(0, MAX);
-
   if (!display.length) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No leads match the current filters.</div></td></tr>`;
-    tbody.dataset.sortedJson = "[]";
+    wrap.innerHTML = `<div class="empty-state">No leads match the current filters.</div>`;
+    wrap.dataset.sortedJson = "[]";
     return;
   }
-
   const rows = display.map((r, i) => {
     const newBadge = r.is_new_in_24h ? `<span class="new-badge">NEW</span>` : "";
-    const chips = (r.patterns || []).map(p => {
-      const subs = (r.signals || []).filter(s => s.pattern === p).map(s => s.subtype || "");
-      const subTooltip = subs.filter(Boolean).slice(0, 3).join(", ") || PATTERN_DISPLAY[p];
-      return `<span class="chip ${p}" title="${escapeAttr(PATTERN_DISPLAY[p] + ' — ' + subTooltip)}">${PATTERN_DISPLAY[p]}</span>`;
+    const chips = safeArr(r.patterns).map(p => {
+      const subs = safeArr(r.signals).filter(s => s.pattern === p);
+      const tooltip = subs.length ? `${PATTERN_DISPLAY[p]} — ${subs.map(s=>s.subtype||s.doc_type||"").filter(Boolean).slice(0,3).join(", ")}` : PATTERN_DISPLAY[p];
+      const discharged = subs.length && subs.every(s => s.discharged) ? " discharged" : "";
+      return `<span class="chip ${p}${discharged}" title="${escapeAttr(tooltip)}">${PATTERN_DISPLAY[p]}</span>`;
     }).join("");
-    const icons = (r.attributes || []).map(a =>
-      `<span class="ic" title="${escapeAttr(ATTR_DISPLAY[a])}"><svg width="16" height="16"><use xlink:href="#i-${a}"></use></svg></span>`
+    const icons = safeArr(r.attributes).map(a =>
+      `<span class="ic" title="${escapeAttr(ATTR_DISPLAY[a]||a)}"><svg width="16" height="16"><use xlink:href="#i-${a}"></use></svg></span>`
     ).join("");
-    return `<tr data-idx="${i}" class="lead-row">
-      <td><strong>${escapeHtml(r.pid || "")}</strong></td>
-      <td>${newBadge}${escapeHtml(r.situs_address || "—")}<br><span style="color:var(--text-muted);font-size:11px">${escapeHtml(r.mun_name || "")}</span></td>
-      <td>${escapeHtml(r.owner || "—")}</td>
-      <td><span class="icon-strip">${icons}</span></td>
-      <td><span class="chip-strip">${chips}</span></td>
-      <td><span style="color:var(--text-muted);font-size:11px">${escapeHtml(r.last_signal_date || "—")}</span></td>
-    </tr>`;
+    // Pull primary amount + defendant from first signal if present
+    const sig0 = safeArr(r.signals)[0] || {};
+    const amount = sig0.amount;
+    const defendant = sig0.defendant || (Array.isArray(sig0.grantor) ? sig0.grantor.join(", ") : sig0.grantor) || "";
+    const lastSigDate = r.last_signal_date || "";
+
+    return `<div class="lead-row" data-idx="${i}">
+      <div class="col">
+        <div class="pid">${newBadge}${escapeHtml(r.pid || "")}</div>
+        <div class="pid-sub">Block ${escapeHtml(r.block || "—")} · Lot ${escapeHtml(r.lot || "—")}${r.qualifier ? " · Qual " + escapeHtml(r.qualifier) : ""}</div>
+        <div class="situs">${escapeHtml(r.situs_address || "—")}</div>
+        <div class="mun">${escapeHtml(r.mun_name || "")}</div>
+        <div class="owner">${escapeHtml(r.owner || "(owner redacted)")}</div>
+        ${r.attributes && r.attributes.includes("absentee") && r.mailing_address ? `<div class="mailing">Mail: ${escapeHtml(r.mailing_address)}, ${escapeHtml(r.mailing_city_state||"")}</div>` : ""}
+      </div>
+      <div class="col">
+        <div class="chips">${chips}</div>
+        <div class="icons">${icons}</div>
+        <div class="yo">${r.years_owned != null ? r.years_owned + " yrs owned" : ""}</div>
+      </div>
+      <div class="col">
+        <div class="signal-when"><strong>${escapeHtml(lastSigDate || "—")}</strong> <span style="color:var(--text-muted);font-size:11px">(${escapeHtml(fmtRelative(lastSigDate))})</span></div>
+        ${amount != null ? `<div class="amount">${fmtMoney(amount)}</div>` : ""}
+        ${defendant ? `<div class="defendant">${escapeHtml(defendant)}</div>` : ""}
+        <div class="vals">Assessed ${fmtMoney(r.assessed_value)} · Last sale ${fmtMoney(r.last_sale_price)}${r.last_sale_date ? " (" + escapeHtml(r.last_sale_date.slice(0,4)) + ")" : ""}</div>
+      </div>
+    </div>`;
   }).join("");
-
   const more = sorted.length > MAX
-    ? `<tr><td colspan="6"><div class="empty-state">${(sorted.length - MAX).toLocaleString()} more rows match — refine filters to narrow.</div></td></tr>`
+    ? `<div class="empty-state">${(sorted.length - MAX).toLocaleString()} more leads match — refine filters to narrow.</div>`
     : "";
-
-  tbody.innerHTML = rows + more;
-  tbody.dataset.sortedJson = JSON.stringify(display);
+  wrap.innerHTML = rows + more;
+  wrap.dataset.sortedJson = JSON.stringify(display);
 }
 
 function renderResults(filtered) {
@@ -496,29 +587,30 @@ function renderAll() {
   const filtered = RECORDS.filter(matches);
   renderLeadTypeStats(filtered);
   renderQualityStats(filtered);
-  renderTable(filtered);
+  renderPrecanned(filtered);
+  renderCards(filtered);
   renderResults(filtered);
 }
 
-// =============== EXPAND ROW ===============================================
-function expandRow(tr) {
-  const idx = tr.dataset.idx;
-  const sorted = JSON.parse(document.getElementById("tbody").dataset.sortedJson || "[]");
+// =============== Expand ===================================================
+function expandRow(rowEl) {
+  const idx = rowEl.dataset.idx;
+  const sorted = JSON.parse(document.getElementById("cards-wrap").dataset.sortedJson || "[]");
   const r = sorted[idx];
   if (!r) return;
-  const next = tr.nextElementSibling;
-  if (next && next.classList.contains("expand-row")) { next.remove(); tr.classList.remove("expanded"); return; }
-  document.querySelectorAll("tr.expand-row").forEach(x => x.remove());
-  document.querySelectorAll("tr.expanded").forEach(x => x.classList.remove("expanded"));
+  const nxt = rowEl.nextElementSibling;
+  if (nxt && nxt.classList.contains("expand")) { nxt.remove(); rowEl.classList.remove("expanded"); return; }
+  document.querySelectorAll(".lead-row.expand").forEach(x => x.remove());
+  document.querySelectorAll(".lead-row.expanded").forEach(x => x.classList.remove("expanded"));
 
   const sigsByPat = {};
-  for (const s of (r.signals || [])) (sigsByPat[s.pattern || "?"] = sigsByPat[s.pattern || "?"] || []).push(s);
+  for (const s of safeArr(r.signals)) (sigsByPat[s.pattern || "?"] = sigsByPat[s.pattern || "?"] || []).push(s);
   const sigBlocks = Object.keys(sigsByPat).sort().map(p => {
     return sigsByPat[p].map(s => {
-      const payload = Object.entries(s.payload || {}).filter(([, v]) => v != null && v !== "");
+      const payload = Object.entries(safeObj(s.payload)).filter(([, v]) => v != null && v !== "");
       const payloadStr = payload.map(([k, v]) => `${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`).join(" · ");
       return `<div class="signal-block" style="border-left-color: var(--c-${p})">
-        <div class="signal-head"><span class="chip ${p}">${PATTERN_DISPLAY[p] || p}</span><strong>${escapeHtml(s.subtype || s.doc_type || "")}</strong></div>
+        <div class="signal-head"><span class="chip ${p}${s.discharged?' discharged':''}">${PATTERN_DISPLAY[p] || p}</span><strong>${escapeHtml(s.subtype || s.doc_type || "")}</strong>${s.discharged?'<span style="color:var(--text-muted);font-size:11px;margin-left:6px">discharged '+escapeHtml(s.discharged_date||"")+'</span>':''}</div>
         <div class="signal-meta">${escapeHtml(s.source || "")} · ${escapeHtml(s.date || "no date")}${s.case_no ? " · case " + escapeHtml(s.case_no) : ""}${s.amount != null ? " · " + fmtMoney(s.amount) : ""}${s.status ? " · status: " + escapeHtml(s.status) : ""}</div>
         ${payloadStr ? `<div class="signal-payload">${escapeHtml(payloadStr)}</div>` : ""}
       </div>`;
@@ -526,30 +618,30 @@ function expandRow(tr) {
   }).join("");
 
   const gisLink = (RAW.gis_deep_link_template || "").replace("{pid}", encodeURIComponent(r.pid || ""));
-  const expandTr = document.createElement("tr");
-  expandTr.className = "expand-row";
-  expandTr.innerHTML = `<td colspan="6">
+  const expandEl = document.createElement("div");
+  expandEl.className = "lead-row expand";
+  expandEl.innerHTML = `
     <div class="expand-grid">
       <div class="key">PID</div><div class="val">${escapeHtml(r.pid || "—")}</div>
       <div class="key">Block / Lot / Qual</div><div class="val">${escapeHtml(r.block || "—")} / ${escapeHtml(r.lot || "—")} / ${escapeHtml(r.qualifier || "—")}</div>
       <div class="key">Situs</div><div class="val">${escapeHtml(r.situs_address || "—")}, ${escapeHtml(r.mun_name || "")}</div>
       <div class="key">Mailing</div><div class="val">${escapeHtml(r.mailing_address || "—")}, ${escapeHtml(r.mailing_city_state || "")} ${escapeHtml(r.mailing_zip || "")}</div>
       <div class="key">Owner</div><div class="val">${escapeHtml(r.owner || "(redacted upstream — see methodology)")}</div>
-      <div class="key">Year built / dwell / class</div><div class="val">${r.year_built || "—"} / ${r.dwell || "—"} / ${escapeHtml(r.prop_class || "—")} (${escapeHtml(r.bldg_class || "—")})</div>
-      <div class="key">Assessed (land + imprvt = net)</div><div class="val">${fmtMoney(r.land_val)} + ${fmtMoney(r.imprvt_val)} = <strong>${fmtMoney(r.assessed_value)}</strong> · last yr tax ${fmtMoney(r.last_yr_tx)}</div>
-      <div class="key">Last sale</div><div class="val">${escapeHtml(r.last_sale_date || "—")} · ${fmtMoney(r.last_sale_price)} · book ${escapeHtml(r.deed_book || "—")} pg ${escapeHtml(r.deed_page || "—")} · ${r.years_owned ?? "—"} yrs owned</div>
-      <div class="key">Lead types / depth</div><div class="val">${(r.patterns || []).map(p => `<span class="chip ${p}">${PATTERN_DISPLAY[p]}</span>`).join(" ")} · depth ${r.pattern_count}</div>
-      <div class="key">Attributes</div><div class="val">${(r.attributes || []).map(a => ATTR_DISPLAY[a]).join(", ") || "—"}</div>
+      <div class="key">Year built / dwell / class</div><div class="val">${escapeHtml(String(r.year_built||"—"))} / ${escapeHtml(String(r.dwell||"—"))} / ${escapeHtml(r.prop_class || "—")} (${escapeHtml(r.bldg_class || "—")})</div>
+      <div class="key">Assessed</div><div class="val">${fmtMoney(r.land_val)} land + ${fmtMoney(r.imprvt_val)} imprvt = <strong>${fmtMoney(r.assessed_value)}</strong> · last yr tax ${fmtMoney(r.last_yr_tx)}</div>
+      <div class="key">Last sale</div><div class="val">${escapeHtml(r.last_sale_date || "—")} · ${fmtMoney(r.last_sale_price)} · book ${escapeHtml(r.deed_book || "—")} pg ${escapeHtml(r.deed_page || "—")} · ${r.years_owned != null ? r.years_owned + " yrs owned" : "—"}</div>
+      <div class="key">Lead types / depth</div><div class="val">${safeArr(r.patterns).map(p => `<span class="chip ${p}">${PATTERN_DISPLAY[p]}</span>`).join(" ")} · depth ${r.pattern_count || 0}</div>
+      <div class="key">Attributes</div><div class="val">${safeArr(r.attributes).map(a => ATTR_DISPLAY[a] || a).join(", ") || "—"}</div>
       <div class="key">GIS</div><div class="val">${gisLink ? `<a href="${gisLink}" target="_blank" rel="noopener">Open NJ ArcGIS parcel record</a>` : "—"}</div>
     </div>
-    <div style="font-weight:600;color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Signals (${(r.signals || []).length})</div>
+    <div style="font-weight:600;color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Signals (${safeArr(r.signals).length})</div>
     ${sigBlocks || "<em style='color:var(--text-muted)'>none</em>"}
-  </td>`;
-  tr.parentElement.insertBefore(expandTr, tr.nextSibling);
-  tr.classList.add("expanded");
+  `;
+  rowEl.parentElement.insertBefore(expandEl, rowEl.nextSibling);
+  rowEl.classList.add("expanded");
 }
 
-// =============== CSV EXPORT ===============================================
+// =============== CSV export ===============================================
 function exportCsv(filtered) {
   const cols = [
     "pid","block","lot","qualifier","owner","situs_address","mailing_address","mun_name",
@@ -563,10 +655,10 @@ function exportCsv(filtered) {
   for (const r of filtered) {
     const vals = cols.map(c => {
       let v;
-      if (c === "lead_types") v = (r.patterns || []).map(p => PATTERN_DISPLAY[p]).join(";");
+      if (c === "lead_types") v = safeArr(r.patterns).map(p => PATTERN_DISPLAY[p]).join(";");
       else if (c === "lead_type_count") v = r.pattern_count || 0;
-      else if (ATTR_NAMES.includes(c)) v = (r.attributes || []).includes(c) ? 1 : 0;
-      else if (c === "signal_count") v = (r.signals || []).length;
+      else if (ATTR_NAMES.includes(c)) v = safeArr(r.attributes).includes(c) ? 1 : 0;
+      else if (c === "signal_count") v = safeArr(r.signals).length;
       else if (["phone1","phone2","phone3","email1","email2"].includes(c)) v = "";
       else v = r[c];
       if (v == null) v = "";
@@ -585,12 +677,7 @@ function exportCsv(filtered) {
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
 }
 
-// =============== HELPERS ==================================================
-function fmtMoney(v) { if (v == null || v === "") return "—"; const n = Number(v); if (isNaN(n)) return v; return "$" + n.toLocaleString(); }
-function escapeHtml(s) { if (s == null) return ""; return String(s).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch])); }
-function escapeAttr(s) { return escapeHtml(s).replace(/`/g, "&#96;"); }
-
-// =============== EVENT WIRING =============================================
+// =============== Wiring ===================================================
 function bindFilterRail() {
   document.getElementById("filter-patterns").addEventListener("change", (e) => {
     const t = e.target;
@@ -654,13 +741,14 @@ function bindToolbar() {
   document.getElementById("export-csv").addEventListener("click", () => exportCsv(RECORDS.filter(matches)));
 }
 
-function bindRowAndStats() {
-  document.getElementById("tbody").addEventListener("click", (e) => {
-    const tr = e.target.closest("tr.lead-row"); if (tr) expandRow(tr);
+function bindCards() {
+  document.getElementById("cards-wrap").addEventListener("click", (e) => {
+    const r = e.target.closest(".lead-row");
+    if (r && !r.classList.contains("expand")) expandRow(r);
   });
-  // Click stat tile → toggle pattern checkbox
   document.getElementById("stats-leadtypes").addEventListener("click", (e) => {
     const tile = e.target.closest("[data-stat-pattern]"); if (!tile) return;
+    if (tile.classList.contains("dimmed")) return;
     const p = tile.dataset.statPattern;
     if (filters.patterns.has(p)) filters.patterns.delete(p); else filters.patterns.add(p);
     const cb = document.querySelector(`#filter-patterns input[data-pattern="${p}"]`);
@@ -669,38 +757,28 @@ function bindRowAndStats() {
   });
 }
 
-function applyPrecanned(name) {
-  filters.patterns.clear(); filters.subtypes.clear(); filters.attributes.clear();
-  filters.match_mode = "ANY";
-  if (name === "highest_stack") {
-    sort_key = "pattern_count_desc";
-    document.getElementById("sort").value = sort_key;
-  } else if (name === "recent_foreclosures") {
-    filters.patterns.add("foreclosure");
-    sort_key = "last_signal_date_desc";
-    document.getElementById("sort").value = sort_key;
-  } else if (name === "tax_vacant") {
-    filters.patterns.add("tax"); filters.attributes.add("vacant"); filters.match_mode = "ALL";
-  } else if (name === "estate_absentee") {
-    filters.patterns.add("estate"); filters.attributes.add("absentee"); filters.match_mode = "ALL";
-  } else if (name === "code_oos") {
-    filters.patterns.add("code"); filters.attributes.add("out_of_state"); filters.match_mode = "ALL";
-  } else if (name === "longterm_fnc") {
-    filters.attributes.add("long_term_owned"); filters.attributes.add("free_and_clear");
-    sort_key = "years_owned_desc"; document.getElementById("sort").value = sort_key;
-    filters.match_mode = "ALL";
+function applyPrecanned(id) {
+  const v = PRECANNED_VIEWS.find(x => x.id === id);
+  if (!v) return;
+  filters.patterns = new Set(v.patterns);
+  filters.subtypes = new Set();
+  filters.attributes = new Set(v.attributes);
+  filters.match_mode = v.mode;
+  if (v.sort) {
+    sort_key = v.sort;
+    const sortEl = document.getElementById("sort"); if (sortEl) sortEl.value = sort_key;
   }
   document.querySelectorAll("#match-mode-buttons button").forEach(b => b.classList.toggle("active", b.dataset.mode === filters.match_mode));
   renderFilterRail(); renderAll();
 }
 
 function bindPrecanned() {
-  document.querySelector(".precanned").addEventListener("click", (e) => {
+  document.getElementById("precanned-row").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-precanned]"); if (btn) applyPrecanned(btn.dataset.precanned);
   });
 }
 
-// =============== LOAD =====================================================
+// =============== Load =====================================================
 async function load() {
   let data;
   try {
@@ -708,23 +786,26 @@ async function load() {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     data = await r.json();
   } catch (e) {
-    document.body.insertAdjacentHTML("afterbegin",
-      `<div class="error-state">Failed to load data/leads.json: ${escapeHtml(String(e))}<br>Run <code>py -3.12 pipeline/refresh.py --dry-run</code> to regenerate.</div>`);
+    showError(`Failed to load data/leads.json: ${e}\nRun: py -3.12 pipeline/refresh.py --dry-run`);
     return;
   }
   RAW = data;
-  RECORDS = data.records || [];
+  RECORDS = safeArr(data.records);
 
   renderHeader();
   renderFilterRail();
   bindFilterRail();
   bindToolbar();
-  bindRowAndStats();
+  bindCards();
   bindPrecanned();
   renderAll();
+
+  // Ready marker — used by pipeline/verify.py to confirm dashboard rendered
+  // successfully in the live browser (Phase 5 verification gate).
+  document.body.dataset.ready = "1";
 }
 
-load();
+load().catch(e => showError(`load() rejected: ${e && e.stack ? e.stack : e}`));
 </script>
 
 </body>

@@ -177,6 +177,8 @@ th {{ background: var(--panel); color: var(--text); font-weight: 600; }}
 <div class="toc"><strong>Contents</strong>
   <ul>
     <li><a href="#what">What this is</a></li>
+    <li><a href="#unblocking-clerk-data">How leads get into this dashboard</a> <em>(start here)</em></li>
+    <li><a href="#enrichment">Why MOD-IV parcel data is enrichment, not a lead source</a></li>
     <li><a href="#patterns">The 11 lead-type patterns</a></li>
     <li><a href="#subtypes">Subtype counts (live)</a></li>
     <li><a href="#attributes">The 9 parcel attributes</a></li>
@@ -192,7 +194,41 @@ th {{ background: var(--panel); color: var(--text); font-weight: 600; }}
 <h2 id="what">What this is</h2>
 <p>An audit-grade index of distress signals attached to Ocean County properties. The goal is the operator's goal: surface the relatively small set of parcels where multiple <em>distinct</em> distress patterns have stacked on the same property. Stacking is more predictive than any single signal, and more honest than any black-box "motivated seller score."</p>
 <p>The pipeline is one-way: scrapers fetch raw public records, the build step joins and patterns them into <code>data/leads.json</code>, the dashboard renders it. No database, no ML, no proprietary scoring. Every count is reproducible from raw inputs. <strong>Counts on this page are the actual current numbers — no figures are hand-typed.</strong></p>
-<p>Today's snapshot: <strong>{fmt_count(parcel_total)} parcels</strong> indexed, <strong>{fmt_count(lead_total)} leads</strong> after pipeline, <strong>{fmt_count(total_signals)} total signals</strong>, <strong>{fmt_count(new_in_24h)}</strong> leads new in last 24h. Most-stacked parcel: <strong>{fmt_count(most_stacked)}</strong> distinct lead types.</p>
+<p>Today's snapshot: <strong>{fmt_count(parcel_total)} parcels</strong> indexed (enrichment lookup), <strong>{fmt_count(lead_total)} leads</strong> after pipeline, <strong>{fmt_count(total_signals)} total signals</strong>, <strong>{fmt_count(new_in_24h)}</strong> leads new in last 24h. Most-stacked parcel: <strong>{fmt_count(most_stacked)}</strong> distinct lead types.</p>
+
+<h2 id="unblocking-clerk-data">How leads get into this dashboard</h2>
+<p>The Ocean County Clerk's office records every recorded property instrument — deeds, mortgages, liens, judgments, foreclosure filings. <strong>Those records are the leads.</strong> Until the operator unblocks the clerk's data feed, this dashboard shows only sheriff foreclosure sales (the one source not behind reCAPTCHA).</p>
+<p>Two paths to unblock — both ship in this build, both run automatically once configured.</p>
+<h3>Path A — OPRA bulk request (system of record)</h3>
+<p>A pre-filled, signature-ready PDF is generated monthly at <code>opra_requests/&lt;YYYYMM&gt;_ocean_clerk.pdf</code>. The request asks for a machine-readable bulk export (CSV/Excel) of every recorded instrument in the prior calendar month, filtered to the doc-type abbreviations that fire each pattern. Cites <i>N.J.S.A.</i> 47:1A-1, requests electronic delivery (drops the per-request fee to near zero), and asks for <strong>standing monthly delivery for 12 months</strong> so the operator does not need to re-submit.</p>
+<ol>
+  <li>Sign the generated PDF.</li>
+  <li>Email it to the Ocean County Clerk's office (custodian: County Clerk John P. Kelly).</li>
+  <li>Response within ~7 business days.</li>
+  <li>When the operator receives the CSVs, drop them into <code>data/raw/clerk_opra/incoming/</code>.</li>
+  <li>Next refresh runs <code>scrapers/clerk_opra_ingest.py</code> automatically — leads appear in the dashboard. No code changes needed.</li>
+</ol>
+<h3>Path B — Seeded session (daily freshness layer)</h3>
+<p>The clerk's NewVision <code>publicsearch</code> API enforces reCAPTCHA v3 server-side. We do not solve CAPTCHA. Instead, the operator opens the clerk site in their real Chrome, completes one search (which triggers the silent reCAPTCHA challenge their session passes), and copies the resulting cookies into <code>.env</code>. The pipeline replays them on automated calls.</p>
+<ol>
+  <li>Open <a href="https://sng.co.ocean.nj.us/publicsearch/" target="_blank">https://sng.co.ocean.nj.us/publicsearch/</a> in Chrome.</li>
+  <li>Submit any doc-type search (e.g. <code>DEED</code>, last 7 days).</li>
+  <li>DevTools → Application → Cookies → copy ALL cookies for <code>sng.co.ocean.nj.us</code> as a single <code>name=value;name=value;...</code> string.</li>
+  <li>Paste into <code>.env</code>:
+    <pre>CLERK_SESSION_COOKIES=ASP.NET_SessionId=...; ...
+CLERK_SESSION_TOKEN=&lt;X-RequestVerificationToken header value&gt;
+CLERK_SESSION_SEEDED_AT=2026-05-05T13:42:00Z</pre>
+  </li>
+  <li>Pipeline pulls daily until session expires (typically 24–72h). On expiry, refresh harness sends a Telegram alert: <em>"Re-seed clerk session within 24h."</em></li>
+  <li>Re-seed weekly — 30 seconds.</li>
+</ol>
+<p>Both paths run in parallel. OPRA is the system of record (monthly bulk, complete coverage). Seeded session is the daily freshness layer (catches new filings within hours of recording). Output schema is identical, so the pipeline doesn't care which path the data came from.</p>
+
+<h2 id="enrichment">Why MOD-IV parcel data is enrichment, not a lead source</h2>
+<p>The <strong>NJ MOD-IV statewide parcel layer</strong> publishes assessed values, sales history, mailing addresses, year built, and ~40 other parcel-state fields for all 298,147 Ocean parcels. This is structural metadata about a property — <strong>not a recorded distress event</strong>. The v1.0 build mistakenly treated MOD-IV nominal-consideration deeds (sale price ≤ $10) as <em>distressed-transfer leads</em>, generating 6,921 records that were almost entirely family / trust / corporate-restructuring transfers with no investor relevance. That noise drowned out the 80 real sheriff-sale leads.</p>
+<p>v2.1 reclassifies MOD-IV correctly: <strong>parcel data enriches every clerk-derived and sheriff-derived lead</strong> with owner mailing address (drives the absentee + out-of-state attributes), assessed value (drives high-equity), deed date (drives long-term-owned + senior-owner proxy), entity-name regex on the mailing line, and so on. MOD-IV does not generate leads. Clerk records and sheriff sales generate leads; MOD-IV decorates them.</p>
+<p>Distressed-transfer subtypes (Quitclaim Deed, Sheriff's Deed, Executor's/Administrator's Deed, Deed in Lieu) are real lead types — but they fire from <strong>clerk DEED records</strong> with grantor/grantee/consideration/sub-type metadata, not from the MOD-IV parcel layer alone.</p>
+
 
 <h2 id="patterns">The 11 lead-type patterns</h2>
 <table>
