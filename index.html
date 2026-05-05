@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ocean County, NJ — Property Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #0A0A0A;
+  --panel: #0F172A;
+  --panel-2: #111A2E;
+  --border: #1F2937;
+  --text: #E5E7EB;
+  --text-muted: #94A3B8;
+  --accent: #3B82F6;
+  --accent-hover: #60A5FA;
+  --hot: #ef4444;
+  --warm: #f59e0b;
+  --active: #3B82F6;
+  --good: #10b981;
+  --shadow-glow: 0 0 16px rgba(59, 130, 246, 0.30);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.5; }
+body { padding: 24px; max-width: 1600px; margin: 0 auto; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); }
+
+header.top { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+header.top h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+header.top h1 .sub { color: var(--text-muted); font-size: 14px; font-weight: 400; margin-left: 12px; }
+header.top .meta { font-size: 12px; color: var(--text-muted); text-align: right; line-height: 1.6; }
+header.top .meta a { margin-left: 16px; }
+
+.stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+.stat .label { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+.stat .value { font-size: 22px; font-weight: 700; margin-top: 4px; }
+.stat.hot .value { color: var(--hot); }
+.stat.warm .value { color: var(--warm); }
+.stat.active .value { color: var(--active); }
+
+.controls { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+.row:last-child { margin-bottom: 0; }
+.row .label-tag { color: var(--text-muted); font-size: 11px; text-transform: uppercase; font-weight: 500; letter-spacing: 0.06em; min-width: 80px; }
+.pill { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 999px; font-size: 12px; cursor: pointer; user-select: none; transition: all .12s; font-weight: 500; }
+.pill:hover { border-color: var(--accent); box-shadow: var(--shadow-glow); }
+.pill.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: var(--shadow-glow); }
+.pill .count { color: var(--text-muted); margin-left: 4px; font-size: 11px; }
+.pill.active .count { color: rgba(255,255,255,0.85); }
+
+input[type="text"], input[type="number"] { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px; }
+input[type="text"]:focus, input[type="number"]:focus { outline: none; border-color: var(--accent); box-shadow: var(--shadow-glow); }
+
+.toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+.toggle input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
+
+.range-row { display: flex; align-items: center; gap: 8px; }
+.range-row label { color: var(--text-muted); font-size: 12px; min-width: 110px; }
+.range-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+.range-row .value-display { min-width: 40px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
+
+button.cta { background: var(--accent); border: none; color: #fff; padding: 7px 14px; border-radius: 4px; font-weight: 500; cursor: pointer; font-family: inherit; font-size: 12px; }
+button.cta:hover { background: var(--accent-hover); }
+
+.results-meta { display: flex; justify-content: space-between; align-items: center; padding: 0 4px 8px 4px; color: var(--text-muted); font-size: 12px; }
+.results-meta .truths-status { font-weight: 500; }
+
+table.leads { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+table.leads th, table.leads td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+table.leads th { background: var(--panel-2); color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; font-size: 11px; cursor: pointer; user-select: none; white-space: nowrap; }
+table.leads th .sort-indicator { color: var(--accent); margin-left: 4px; font-size: 10px; }
+table.leads tbody tr { cursor: pointer; transition: background .08s; }
+table.leads tbody tr:hover { background: rgba(59, 130, 246, 0.06); }
+table.leads tbody tr.expanded { background: rgba(59, 130, 246, 0.10); }
+table.leads tbody tr.expand-row { background: var(--panel-2); cursor: default; }
+table.leads tbody tr.expand-row td { padding: 14px 24px; border-top: 1px solid var(--border); }
+
+.tier-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.tier-badge.hot { background: rgba(239, 68, 68, 0.15); color: var(--hot); }
+.tier-badge.warm { background: rgba(245, 158, 11, 0.15); color: var(--warm); }
+.tier-badge.active { background: rgba(59, 130, 246, 0.15); color: var(--active); }
+
+.pattern-tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; background: rgba(59, 130, 246, 0.12); color: var(--accent); margin-right: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.new-badge { display: inline-block; background: var(--good); color: #fff; padding: 1px 6px; border-radius: 3px; font-size: 10px; margin-right: 6px; font-weight: 600; text-transform: uppercase; }
+
+.signal-block { border-left: 2px solid var(--border); padding: 10px 14px; margin: 8px 0; background: rgba(15, 23, 42, 0.5); }
+.signal-block .pattern-tag { font-size: 11px; padding: 2px 8px; }
+.signal-block .signal-meta { color: var(--text-muted); font-size: 11px; margin-top: 4px; }
+.signal-block .signal-payload { font-family: 'Consolas', monospace; font-size: 11px; color: var(--text-muted); margin-top: 6px; word-break: break-word; }
+
+.flag-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; background: rgba(245, 158, 11, 0.12); color: var(--warm); margin-right: 4px; }
+
+.expand-grid { display: grid; grid-template-columns: 220px 1fr; gap: 10px 16px; margin-bottom: 12px; }
+.expand-grid .key { color: var(--text-muted); font-size: 12px; }
+.expand-grid .val { color: var(--text); font-size: 13px; }
+
+footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 12px; text-align: center; }
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); background: var(--panel); border: 1px solid var(--border); border-radius: 8px; }
+.error-state { background: rgba(239, 68, 68, 0.10); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-family: monospace; font-size: 12px; }
+.search-row input { width: 320px; }
+.search-row .clear-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+.search-row .clear-btn:hover { color: var(--text); border-color: var(--accent); }
+
+.scroll-cap { max-height: 70vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); }
+
+@media (max-width: 1100px) {
+  .stats { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 700px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  body { padding: 12px; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>Ocean County, NJ <span class="sub">Property Intelligence</span></h1>
+  <div class="meta">
+    <div id="m-refresh">Loading…</div>
+    <div id="m-source-attribution"></div>
+    <div>
+      <a href="methodology.html">Methodology</a>
+      <a id="repo-link" href="https://github.com/xcerebroai/ocean-intel" target="_blank">Source</a>
+    </div>
+  </div>
+</header>
+
+<div class="stats" id="stats"></div>
+
+<div class="controls">
+  <div class="row search-row">
+    <span class="label-tag">Search</span>
+    <input type="text" id="q" placeholder="address, owner, PID, case #, defendant, plaintiff…" />
+    <button class="clear-btn" id="q-clear">Clear</button>
+    <span style="flex:1"></span>
+    <button class="cta" id="export-csv">Export CSV</button>
+  </div>
+
+  <div class="row">
+    <span class="label-tag">Tier</span>
+    <span class="pill tier-pill active" data-tier="all">All <span class="count" id="cnt-all"></span></span>
+    <span class="pill tier-pill" data-tier="hot">Hot <span class="count" id="cnt-hot"></span></span>
+    <span class="pill tier-pill" data-tier="warm">Warm <span class="count" id="cnt-warm"></span></span>
+    <span class="pill tier-pill" data-tier="active">Active <span class="count" id="cnt-active"></span></span>
+  </div>
+
+  <div class="row">
+    <span class="label-tag">Patterns</span>
+    <span class="pill pattern-pill" data-pattern="jfc">jfc <span class="count" id="pcnt-jfc"></span></span>
+    <span class="pill pattern-pill" data-pattern="tax">tax <span class="count" id="pcnt-tax"></span></span>
+    <span class="pill pattern-pill" data-pattern="estate">estate <span class="count" id="pcnt-estate"></span></span>
+    <span class="pill pattern-pill" data-pattern="code">code <span class="count" id="pcnt-code"></span></span>
+    <span class="pill pattern-pill" data-pattern="lien">lien <span class="count" id="pcnt-lien"></span></span>
+    <span class="pill pattern-pill" data-pattern="transfer">transfer <span class="count" id="pcnt-transfer"></span></span>
+  </div>
+
+  <div class="row" id="doctype-row">
+    <span class="label-tag">Doc types</span>
+    <!-- pills injected -->
+  </div>
+
+  <div class="row">
+    <span class="label-tag">Filters</span>
+    <label class="toggle"><input type="checkbox" id="f-absentee" /> Absentee</label>
+    <label class="toggle"><input type="checkbox" id="f-entity" /> Entity owner</label>
+    <label class="toggle"><input type="checkbox" id="f-senior" /> Senior exemption</label>
+    <label class="toggle"><input type="checkbox" id="f-demo" /> Demolition order</label>
+    <label class="toggle"><input type="checkbox" id="f-new24" /> New in last 24h</label>
+  </div>
+
+  <div class="row">
+    <span class="label-tag">Ranges</span>
+    <div class="range-row" style="min-width:340px">
+      <label>Min years owned</label>
+      <input type="range" id="f-yo" min="0" max="50" value="0" step="1" />
+      <span class="value-display" id="f-yo-v">0</span>
+    </div>
+    <div class="range-row" style="min-width:340px">
+      <label>Max equity %</label>
+      <input type="range" id="f-eq" min="0" max="100" value="100" step="5" />
+      <span class="value-display" id="f-eq-v">100</span>
+    </div>
+  </div>
+</div>
+
+<div class="results-meta">
+  <div id="results-count">Loading…</div>
+  <div class="truths-status" id="truths-status"></div>
+</div>
+
+<div class="scroll-cap">
+  <table class="leads" id="leads-table">
+    <thead>
+      <tr>
+        <th data-sort="pid">PID</th>
+        <th data-sort="tier">Tier</th>
+        <th data-sort="patterns">Patterns</th>
+        <th data-sort="situs_address">Situs</th>
+        <th data-sort="mun_name">Municipality</th>
+        <th data-sort="owner_name">Owner</th>
+        <th data-sort="assessed_value">Assessed</th>
+        <th data-sort="years_owned">Yrs Owned</th>
+        <th data-sort="last_sale_price">Last Sale</th>
+        <th data-sort="signal_count">Sig</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<footer>
+  <div id="footer-content"></div>
+  <div style="margin-top:6px">⚡ Built by Jarvis (Just Jarvis LLC) for Quentin Flores. Operator-first.</div>
+</footer>
+
+<script>
+// ========= STATE ========================================================
+
+let RAW = null;
+let RECORDS = [];
+let PREVIOUS_PIDS = new Set();    // pids in leads.previous.json
+const filters = {
+  tier: "all",
+  patterns: new Set(),
+  docTypes: new Set(),
+  absentee: false,
+  entity: false,
+  senior: false,
+  demo: false,
+  new24: false,
+  minYearsOwned: 0,
+  maxEquity: 100,
+  search: "",
+};
+let sort = { key: "tier", dir: -1 };  // tier desc by default (hot top)
+const TIER_ORDER = { hot: 3, warm: 2, active: 1 };
+
+// ========= THE matches() FUNCTION =======================================
+// Used for BOTH `tierCounts` (and pattern/doc-type counts) AND the rendered
+// table. Single source of truth. Two-Truths cannot drift.
+
+function matches(lead) {
+  if (filters.tier !== "all" && lead.tier !== filters.tier) return false;
+  if (filters.patterns.size > 0) {
+    let any = false;
+    for (const p of (lead.patterns || [])) if (filters.patterns.has(p)) { any = true; break; }
+    if (!any) return false;
+  }
+  if (filters.docTypes.size > 0) {
+    let any = false;
+    for (const s of (lead.signals || [])) if (filters.docTypes.has(s.doc_type)) { any = true; break; }
+    if (!any) return false;
+  }
+  if (filters.absentee && !lead.absentee) return false;
+  if (filters.entity && !lead.entity_owner) return false;
+  if (filters.senior && !(lead.flags && lead.flags.senior_exemption)) return false;
+  if (filters.demo && !(lead.flags && lead.flags.demolition_order)) return false;
+  if (filters.new24 && !lead.is_new_24h) return false;
+  if (filters.minYearsOwned > 0) {
+    const yo = computeYearsOwned(lead);
+    if ((yo == null) || yo < filters.minYearsOwned) return false;
+  }
+  if (filters.search) {
+    const q = filters.search.toLowerCase();
+    const blob = [
+      lead.pid, lead.owner_name, lead.situs_address, lead.mun_name,
+      lead.mailing_address, lead.mailing_city_state,
+      ...(lead.signals || []).map(s => [
+        s.pattern, s.doc_type, s.case_no, s.foreclosure_no,
+        s.plaintiff, s.defendant, s.situs_address,
+        JSON.stringify(s.payload || {}),
+      ].join(" "))
+    ].join(" ").toLowerCase();
+    if (!blob.includes(q)) return false;
+  }
+  return true;
+}
+
+// ========= DERIVED FIELDS ===============================================
+
+function computeYearsOwned(lead) {
+  if (!lead.last_sale_date) return null;
+  const d = new Date(lead.last_sale_date);
+  if (isNaN(d.getTime())) return null;
+  const ms = Date.now() - d.getTime();
+  return Math.max(0, Math.floor(ms / (365.25 * 24 * 60 * 60 * 1000)));
+}
+
+function fmtMoney(v) {
+  if (v == null || v === "") return "—";
+  const n = Number(v);
+  if (isNaN(n)) return v;
+  return "$" + n.toLocaleString();
+}
+
+function fmtDate(s) {
+  if (!s) return "—";
+  return s.slice(0, 10);
+}
+
+// ========= RENDER =======================================================
+
+function renderStats(filtered, tierCountsAll, total) {
+  const tierCountsFiltered = { hot: 0, warm: 0, active: 0 };
+  const patternCountsFiltered = {};
+  const docTypeCountsFiltered = {};
+  for (const r of filtered) {
+    tierCountsFiltered[r.tier] = (tierCountsFiltered[r.tier] || 0) + 1;
+    for (const p of (r.patterns || [])) patternCountsFiltered[p] = (patternCountsFiltered[p] || 0) + 1;
+    for (const s of (r.signals || [])) {
+      if (s.doc_type) docTypeCountsFiltered[s.doc_type] = (docTypeCountsFiltered[s.doc_type] || 0) + 1;
+    }
+  }
+
+  const stats = document.getElementById("stats");
+  const warmHigh = RAW.warm_tier_high_confidence_pct || 0;
+  const newCount = filtered.filter(r => r.is_new_24h).length;
+  stats.innerHTML = `
+    <div class="stat"><div class="label">Total leads (filtered)</div><div class="value">${filtered.length.toLocaleString()}</div></div>
+    <div class="stat hot"><div class="label">Hot</div><div class="value">${tierCountsFiltered.hot}</div></div>
+    <div class="stat warm"><div class="label">Warm</div><div class="value">${tierCountsFiltered.warm}</div></div>
+    <div class="stat active"><div class="label">Active</div><div class="value">${tierCountsFiltered.active}</div></div>
+    <div class="stat"><div class="label">Warm high-confidence</div><div class="value">${warmHigh}%</div></div>
+    <div class="stat"><div class="label">New (24h)</div><div class="value">${newCount}</div></div>
+  `;
+
+  // Update tier pill counts (show counts that would result if you clicked
+  // each pill — derived without that pill applied)
+  document.getElementById("cnt-all").textContent = `(${countWithTier("all").toLocaleString()})`;
+  document.getElementById("cnt-hot").textContent = `(${countWithTier("hot").toLocaleString()})`;
+  document.getElementById("cnt-warm").textContent = `(${countWithTier("warm").toLocaleString()})`;
+  document.getElementById("cnt-active").textContent = `(${countWithTier("active").toLocaleString()})`;
+
+  for (const p of ["jfc","tax","estate","code","lien","transfer"]) {
+    const el = document.getElementById("pcnt-" + p);
+    if (el) el.textContent = `(${(patternCountsFiltered[p] || 0).toLocaleString()})`;
+  }
+
+  // Doctype pill counts (use filtered set, but exclude doctype filter itself)
+  const dtCountsForPills = {};
+  for (const r of RECORDS) {
+    if (!matchesExceptDocType(r)) continue;
+    for (const s of (r.signals || [])) {
+      if (s.doc_type) dtCountsForPills[s.doc_type] = (dtCountsForPills[s.doc_type] || 0) + 1;
+    }
+  }
+  document.querySelectorAll(".doctype-pill").forEach(el => {
+    const dt = el.dataset.doctype;
+    el.querySelector(".count").textContent = `(${(dtCountsForPills[dt] || 0).toLocaleString()})`;
+  });
+}
+
+function matchesExceptDocType(lead) {
+  // matches() but ignoring the doctype filter (used for pill-count display)
+  const saved = filters.docTypes;
+  filters.docTypes = new Set();
+  const r = matches(lead);
+  filters.docTypes = saved;
+  return r;
+}
+
+function countWithTier(tier) {
+  // matches() but with tier overridden
+  const saved = filters.tier;
+  filters.tier = tier;
+  let n = 0;
+  for (const r of RECORDS) if (matches(r)) n++;
+  filters.tier = saved;
+  return n;
+}
+
+function renderTable(filtered) {
+  const tbody = document.getElementById("tbody");
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state">No leads match the current filters.</div></td></tr>`;
+    return;
+  }
+
+  const sorted = [...filtered];
+  sorted.sort((a, b) => {
+    let av, bv;
+    if (sort.key === "tier") { av = TIER_ORDER[a.tier] || 0; bv = TIER_ORDER[b.tier] || 0; }
+    else if (sort.key === "patterns") { av = (a.patterns || []).length; bv = (b.patterns || []).length; }
+    else if (sort.key === "signal_count") { av = (a.signals || []).length; bv = (b.signals || []).length; }
+    else if (sort.key === "years_owned") { av = computeYearsOwned(a); bv = computeYearsOwned(b); }
+    else { av = a[sort.key]; bv = b[sort.key]; }
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    if (typeof av === "number" && typeof bv === "number") return (av - bv) * sort.dir;
+    return String(av).localeCompare(String(bv)) * sort.dir;
+  });
+
+  // Hard cap render at 800 rows to keep DOM fast — show a "more rows hidden" notice
+  const MAX = 800;
+  const display = sorted.slice(0, MAX);
+
+  const rows = display.map((r, i) => {
+    const yo = computeYearsOwned(r);
+    const newBadge = r.is_new_24h ? `<span class="new-badge">NEW</span>` : "";
+    const patternTags = (r.patterns || []).map(p => `<span class="pattern-tag">${p}</span>`).join("");
+    return `<tr data-idx="${i}" class="lead-row">
+      <td><strong>${escapeHtml(r.pid || "")}</strong></td>
+      <td><span class="tier-badge ${r.tier}">${r.tier}</span></td>
+      <td>${patternTags}</td>
+      <td>${newBadge}${escapeHtml(r.situs_address || "—")}</td>
+      <td>${escapeHtml(r.mun_name || "—")}</td>
+      <td>${escapeHtml(r.owner_name || "—")}</td>
+      <td>${fmtMoney(r.assessed_value)}</td>
+      <td>${yo == null ? "—" : yo}</td>
+      <td>${fmtMoney(r.last_sale_price)}</td>
+      <td>${(r.signals || []).length}</td>
+    </tr>`;
+  }).join("");
+
+  const moreRow = sorted.length > MAX
+    ? `<tr><td colspan="10"><div class="empty-state">${(sorted.length - MAX).toLocaleString()} more rows match — refine filters to narrow.</div></td></tr>`
+    : "";
+
+  tbody.innerHTML = rows + moreRow;
+  tbody.dataset.sortedJson = JSON.stringify(display);
+
+  // Sort indicator
+  document.querySelectorAll("th[data-sort]").forEach(th => {
+    th.querySelector(".sort-indicator")?.remove();
+    if (th.dataset.sort === sort.key) {
+      const span = document.createElement("span");
+      span.className = "sort-indicator";
+      span.textContent = sort.dir === 1 ? "▲" : "▼";
+      th.appendChild(span);
+    }
+  });
+}
+
+function renderResultsMeta(filtered) {
+  const total = RECORDS.length;
+  document.getElementById("results-count").textContent =
+    `${filtered.length.toLocaleString()} of ${total.toLocaleString()} leads`;
+  document.getElementById("truths-status").innerHTML =
+    `Two-Truths: stats and table both derived from <code>matches()</code>.`;
+}
+
+function renderHeader() {
+  const m = document.getElementById("m-refresh");
+  const refreshAt = RAW.generated_at ? new Date(RAW.generated_at).toLocaleString() : "—";
+  m.textContent = `Last refreshed: ${refreshAt}`;
+  const sa = document.getElementById("m-source-attribution");
+  const heartbeat = RAW.clerk_heartbeat || {};
+  sa.innerHTML = `Source commit: <code>${RAW.source_commit || "—"}</code>${heartbeat.lastDocumentRecordedInfo ? ` · Clerk index: ${escapeHtml(heartbeat.lastDocumentRecordedInfo)}` : ""}`;
+
+  const ft = document.getElementById("footer-content");
+  const tc = RAW.tier_counts || {};
+  ft.innerHTML = `
+    Generated ${refreshAt} · Source commit <code>${RAW.source_commit || "—"}</code> · ${RAW.parcel_total ? RAW.parcel_total.toLocaleString() : "?"} parcels indexed ·
+    <a href="methodology.html">Methodology</a>
+  `;
+}
+
+function renderDoctypePills() {
+  const row = document.getElementById("doctype-row");
+  const counts = RAW.doc_type_counts || {};
+  const dts = Object.keys(counts).sort();
+  if (!dts.length) {
+    row.innerHTML += `<span style="color:var(--text-muted);font-size:12px">(none yet)</span>`;
+    return;
+  }
+  row.insertAdjacentHTML("beforeend", dts.map(dt =>
+    `<span class="pill doctype-pill" data-doctype="${escapeAttr(dt)}">${escapeHtml(dt)} <span class="count"></span></span>`
+  ).join(""));
+}
+
+function escapeHtml(s) {
+  if (s == null) return "";
+  return String(s).replace(/[&<>"']/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[ch]));
+}
+function escapeAttr(s) { return escapeHtml(s).replace(/`/g, "&#96;"); }
+
+// ========= EXPANDED ROW =================================================
+
+function expandRow(tr) {
+  const idx = tr.dataset.idx;
+  const sorted = JSON.parse(document.getElementById("tbody").dataset.sortedJson);
+  const r = sorted[idx];
+  if (!r) return;
+
+  const next = tr.nextElementSibling;
+  if (next && next.classList.contains("expand-row")) {
+    next.remove();
+    tr.classList.remove("expanded");
+    return;
+  }
+  // collapse other expanded rows
+  document.querySelectorAll("tr.expand-row").forEach(x => x.remove());
+  document.querySelectorAll("tr.expanded").forEach(x => x.classList.remove("expanded"));
+
+  const signalsByPattern = {};
+  for (const s of (r.signals || [])) {
+    const p = s.pattern || "?";
+    (signalsByPattern[p] = signalsByPattern[p] || []).push(s);
+  }
+
+  const sigBlocks = Object.keys(signalsByPattern).sort().map(p => {
+    const items = signalsByPattern[p];
+    return items.map(s => {
+      const payloadEntries = Object.entries(s.payload || {}).filter(([, v]) => v != null && v !== "");
+      const payloadStr = payloadEntries.map(([k, v]) => `${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`).join(" · ");
+      return `<div class="signal-block">
+        <span class="pattern-tag">${p}</span> <strong>${escapeHtml(s.doc_type || "")}</strong>
+        <div class="signal-meta">${escapeHtml(s.source || "")} · ${escapeHtml(fmtDate(s.date))}${s.case_no ? " · case " + escapeHtml(s.case_no) : ""}${s.amount != null ? " · " + fmtMoney(s.amount) : ""}${s.status ? " · status: " + escapeHtml(s.status) : ""}</div>
+        ${payloadStr ? `<div class="signal-payload">${escapeHtml(payloadStr)}</div>` : ""}
+      </div>`;
+    }).join("");
+  }).join("");
+
+  const flags = Object.entries(r.flags || {}).filter(([, v]) => v).map(([k]) => `<span class="flag-badge">${k}</span>`).join("") || "<em style='color:var(--text-muted)'>none</em>";
+
+  // GIS deep link — NJ Geographic Information Network parcel viewer
+  const blockEnc = encodeURIComponent(r.block || "");
+  const lotEnc = encodeURIComponent(r.lot || "");
+  const munEnc = encodeURIComponent(r.mun_code || "");
+  const gisLink = (r.mun_code && r.block && r.lot)
+    ? `https://njgin.nj.gov/njgisdo/?layer=&query=PCL_MUN%3D'${munEnc}'%20AND%20PCLBLOCK%3D'${blockEnc}'%20AND%20PCLLOT%3D'${lotEnc}'`
+    : null;
+
+  const expandTr = document.createElement("tr");
+  expandTr.className = "expand-row";
+  expandTr.innerHTML = `
+    <td colspan="10">
+      <div class="expand-grid">
+        <div class="key">PID</div><div class="val">${escapeHtml(r.pid || "—")}</div>
+        <div class="key">Block / Lot / Qual</div><div class="val">${escapeHtml(r.block || "—")} / ${escapeHtml(r.lot || "—")} / ${escapeHtml(r.qualifier || "—")}</div>
+        <div class="key">Situs address</div><div class="val">${escapeHtml(r.situs_address || "—")}, ${escapeHtml(r.mun_name || "")}</div>
+        <div class="key">Mailing address</div><div class="val">${escapeHtml(r.mailing_address || "—")}, ${escapeHtml(r.mailing_city_state || "")} ${escapeHtml(r.mailing_zip || "")}</div>
+        <div class="key">Owner</div><div class="val">${escapeHtml(r.owner_name || "(redacted upstream)")}</div>
+        <div class="key">Year built / dwell / class</div><div class="val">${r.year_built || "—"} / ${r.dwell || "—"} / ${escapeHtml(r.prop_class || "—")} (${escapeHtml(r.bldg_class || "—")})</div>
+        <div class="key">Assessed (land + imprvt = net)</div><div class="val">${fmtMoney(r.land_val)} + ${fmtMoney(r.imprvt_val)} = <strong>${fmtMoney(r.assessed_value)}</strong> · last yr tax ${fmtMoney(r.last_yr_tx)}</div>
+        <div class="key">Last sale</div><div class="val">${fmtDate(r.last_sale_date)} · ${fmtMoney(r.last_sale_price)} · book ${escapeHtml(r.deed_book || "—")} pg ${escapeHtml(r.deed_page || "—")}</div>
+        <div class="key">Tier / patterns / depth</div><div class="val"><span class="tier-badge ${r.tier}">${r.tier}</span> · ${(r.patterns || []).join(", ")} · depth ${r.stack_depth}</div>
+        <div class="key">Flags</div><div class="val">${flags}</div>
+        ${gisLink ? `<div class="key">GIS</div><div class="val"><a href="${gisLink}" target="_blank" rel="noopener">Open in NJGIN parcel viewer</a></div>` : ""}
+      </div>
+      <div style="font-weight:600;color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Signals (${(r.signals || []).length})</div>
+      ${sigBlocks || "<em style='color:var(--text-muted)'>none</em>"}
+    </td>
+  `;
+  tr.parentElement.insertBefore(expandTr, tr.nextSibling);
+  tr.classList.add("expanded");
+}
+
+// ========= CSV ==========================================================
+
+function exportCsv(filtered) {
+  const cols = [
+    "pid","tier","patterns","stack_depth","situs_address","mun_name","county",
+    "owner_name","mailing_address","mailing_city_state","mailing_zip",
+    "absentee","entity_owner","year_built","prop_class","bldg_class",
+    "land_val","imprvt_val","assessed_value","last_yr_tx",
+    "last_sale_date","last_sale_price","deed_book","deed_page",
+    "block","lot","qualifier",
+    "phone1","phone2","phone3","email1","email2",
+  ];
+  const rows = [cols.join(",")];
+  for (const r of filtered) {
+    const vals = cols.map(c => {
+      let v;
+      if (c === "patterns") v = (r.patterns || []).join("|");
+      else if (["phone1","phone2","phone3","email1","email2"].includes(c)) v = "";
+      else v = r[c];
+      if (v == null) v = "";
+      v = String(v);
+      if (v.includes(",") || v.includes('"') || v.includes("\n")) {
+        v = '"' + v.replace(/"/g, '""') + '"';
+      }
+      return v;
+    });
+    rows.push(vals.join(","));
+  }
+  const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `ocean-leads-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+}
+
+// ========= EVENT WIRING =================================================
+
+function rerender() {
+  const filtered = RECORDS.filter(matches);
+  renderStats(filtered);
+  renderResultsMeta(filtered);
+  renderTable(filtered);
+}
+
+function bindPills() {
+  document.querySelectorAll(".tier-pill").forEach(el => {
+    el.addEventListener("click", () => {
+      filters.tier = el.dataset.tier;
+      document.querySelectorAll(".tier-pill").forEach(x => x.classList.remove("active"));
+      el.classList.add("active");
+      rerender();
+    });
+  });
+  document.querySelectorAll(".pattern-pill").forEach(el => {
+    el.addEventListener("click", () => {
+      const p = el.dataset.pattern;
+      if (filters.patterns.has(p)) { filters.patterns.delete(p); el.classList.remove("active"); }
+      else { filters.patterns.add(p); el.classList.add("active"); }
+      rerender();
+    });
+  });
+}
+
+function bindDocTypePills() {
+  document.querySelectorAll(".doctype-pill").forEach(el => {
+    el.addEventListener("click", () => {
+      const dt = el.dataset.doctype;
+      if (filters.docTypes.has(dt)) { filters.docTypes.delete(dt); el.classList.remove("active"); }
+      else { filters.docTypes.add(dt); el.classList.add("active"); }
+      rerender();
+    });
+  });
+}
+
+function bindToggles() {
+  const map = { "f-absentee": "absentee", "f-entity": "entity", "f-senior": "senior", "f-demo": "demo", "f-new24": "new24" };
+  for (const [id, key] of Object.entries(map)) {
+    document.getElementById(id).addEventListener("change", e => {
+      filters[key] = e.target.checked;
+      rerender();
+    });
+  }
+  document.getElementById("f-yo").addEventListener("input", e => {
+    filters.minYearsOwned = +e.target.value;
+    document.getElementById("f-yo-v").textContent = e.target.value;
+    rerender();
+  });
+  document.getElementById("f-eq").addEventListener("input", e => {
+    filters.maxEquity = +e.target.value;
+    document.getElementById("f-eq-v").textContent = e.target.value;
+    // equity not yet implemented (no AVM source) — tracked in methodology as gap
+  });
+  const q = document.getElementById("q");
+  let timer;
+  q.addEventListener("input", e => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { filters.search = e.target.value.trim(); rerender(); }, 120);
+  });
+  document.getElementById("q-clear").addEventListener("click", () => {
+    q.value = "";
+    filters.search = "";
+    rerender();
+  });
+}
+
+function bindSort() {
+  document.querySelectorAll("th[data-sort]").forEach(th => {
+    th.addEventListener("click", () => {
+      const k = th.dataset.sort;
+      if (sort.key === k) sort.dir *= -1;
+      else { sort.key = k; sort.dir = -1; }
+      rerender();
+    });
+  });
+}
+
+function bindRowClicks() {
+  document.getElementById("tbody").addEventListener("click", (e) => {
+    const tr = e.target.closest("tr.lead-row");
+    if (!tr) return;
+    expandRow(tr);
+  });
+}
+
+function bindCsv() {
+  document.getElementById("export-csv").addEventListener("click", () => {
+    const filtered = RECORDS.filter(matches);
+    exportCsv(filtered);
+  });
+}
+
+// ========= LOAD =========================================================
+
+async function load() {
+  let data;
+  try {
+    const r = await fetch("./data/leads.json", { cache: "no-cache" });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    data = await r.json();
+  } catch (e) {
+    document.body.insertAdjacentHTML("afterbegin",
+      `<div class="error-state">Failed to load data/leads.json: ${escapeHtml(String(e))}<br>Run <code>py -3.12 pipeline/refresh.py --dry-run</code> to regenerate.</div>`);
+    return;
+  }
+  RAW = data;
+  RECORDS = data.records || [];
+
+  // Try to load previous to mark "new in 24h"
+  try {
+    const r = await fetch("./data/leads.previous.json", { cache: "no-cache" });
+    if (r.ok) {
+      const prev = await r.json();
+      PREVIOUS_PIDS = new Set((prev.records || []).map(x => x.pid));
+    }
+  } catch (e) { /* not fatal */ }
+  for (const lead of RECORDS) {
+    lead.is_new_24h = PREVIOUS_PIDS.size > 0 && !PREVIOUS_PIDS.has(lead.pid);
+  }
+
+  renderHeader();
+  renderDoctypePills();
+  bindDocTypePills();
+  bindPills();
+  bindToggles();
+  bindSort();
+  bindRowClicks();
+  bindCsv();
+  rerender();
+}
+
+load();
+</script>
+
+</body>
+</html>

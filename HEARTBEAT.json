@@ -1,0 +1,31 @@
+{
+  "last_success_timestamp": "2026-05-05T13:57:11.016131+00:00",
+  "pipeline_status": "ok",
+  "sources": {
+    "nj_modiv_parcels": {
+      "last_success": "2026-05-05T13:57:11.015131+00:00",
+      "last_status": "ok",
+      "records": 298147,
+      "dry_run": true
+    },
+    "sheriff_foreclosures": {
+      "last_success": "2026-05-05T13:57:11.015131+00:00",
+      "last_status": "ok",
+      "records": 77,
+      "dry_run": true
+    },
+    "civilview_sales": {
+      "last_success": "2026-05-05T13:57:11.015131+00:00",
+      "last_status": "ok",
+      "records": 0,
+      "dry_run": true
+    },
+    "clerk_metadata": {
+      "last_success": "2026-05-05T13:57:11.016131+00:00",
+      "last_status": "ok",
+      "records": 1,
+      "dry_run": true
+    }
+  },
+  "failed_sources": []
+}

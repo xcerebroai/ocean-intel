@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Methodology — Ocean Intel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root { --bg:#0A0A0A; --panel:#0F172A; --border:#1F2937; --text:#E5E7EB; --text-muted:#94A3B8; --accent:#3B82F6; --accent-hover:#60A5FA; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.7; font-size: 14.5px; }
+body { max-width: 880px; margin: 0 auto; padding: 32px 24px 80px; }
+h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+h2 { font-size: 19px; font-weight: 700; margin-top: 36px; margin-bottom: 14px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+h3 { font-size: 15px; font-weight: 600; margin-top: 20px; margin-bottom: 8px; color: var(--text); }
+p { margin-bottom: 12px; }
+ul, ol { margin-left: 22px; margin-bottom: 12px; }
+li { margin-bottom: 4px; }
+a { color: var(--accent); }
+a:hover { color: var(--accent-hover); }
+code { background: var(--panel); padding: 2px 6px; border-radius: 3px; font-family: Consolas, monospace; font-size: 12.5px; }
+pre { background: var(--panel); padding: 14px; border-radius: 6px; overflow-x: auto; font-size: 12.5px; margin-bottom: 14px; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 13px; }
+th, td { padding: 8px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { background: var(--panel); color: var(--text); font-weight: 600; }
+.note { background: rgba(59,130,246,0.08); border-left: 3px solid var(--accent); padding: 12px 14px; border-radius: 0 6px 6px 0; margin: 14px 0; color: var(--text); font-size: 13.5px; }
+.warn { background: rgba(245,158,11,0.10); border-left: 3px solid #f59e0b; padding: 12px 14px; border-radius: 0 6px 6px 0; margin: 14px 0; font-size: 13.5px; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 999px; background: rgba(59,130,246,0.15); color: var(--accent); font-size: 11.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+header.top { margin-bottom: 28px; }
+.muted { color: var(--text-muted); font-size: 13px; }
+.toc { background: var(--panel); padding: 14px 18px; border-radius: 6px; margin: 12px 0 28px; font-size: 13px; }
+.toc ul { margin-bottom: 0; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <p><a href="./index.html">← Back to dashboard</a></p>
+  <h1>Methodology</h1>
+  <p class="muted">How <strong>Ocean Intel</strong> turns 12 Ocean County, NJ public-records sources into a single tiered list of motivated-seller leads. Last updated <span id="last-updated"></span>.</p>
+</header>
+
+<div class="toc">
+  <strong>Contents</strong>
+  <ul>
+    <li><a href="#what">What this is</a></li>
+    <li><a href="#sources">Data sources &amp; refresh cadence</a></li>
+    <li><a href="#patterns">The 6-pattern stack</a></li>
+    <li><a href="#tiers">How a property becomes Hot, Warm, or Active</a></li>
+    <li><a href="#two-truths">The Two-Truths invariant</a></li>
+    <li><a href="#doctypes">Doc-type taxonomy</a></li>
+    <li><a href="#anti-bot">Anti-bot encounters &amp; what's blocked</a></li>
+    <li><a href="#limits">Known limitations &amp; what's not in the data</a></li>
+    <li><a href="#audit">Audit trail</a></li>
+  </ul>
+</div>
+
+<h2 id="what">What this is</h2>
+<p>Ocean Intel is a daily-refreshed, audit-grade index of distress signals attached to Ocean County properties. The goal is the operator's goal: surface the relatively small set of parcels where multiple <em>distinct</em> distress patterns have stacked on the same property. That stacking is far more predictive than any single signal, and far more honest than a black-box "motivated seller score."</p>
+
+<p>The pipeline is one-way: scrapers fetch raw public records, the build step joins and patterns them into <code>data/leads.json</code>, the dashboard renders that file. There is no database, no ML model, no proprietary scoring weights. Every count, every tier, every pattern membership is reproducible from the raw input files.</p>
+
+<h2 id="sources">Data sources &amp; refresh cadence</h2>
+
+<table>
+  <thead>
+    <tr><th>Source</th><th>Cadence</th><th>What it provides</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>NJ MOD-IV statewide parcel layer</strong> (NJ DOIT ArcGIS, <code>NJ_TaxListSearch/MapServer/2</code>)</td><td>Daily incremental on <code>PCLLASTUPD</code>; full county pull weekly (Mondays).</td><td>~298,000 Ocean parcels. Block / lot / qualifier / mailing address / situs / assessed value / land + improvement values / last-year tax / year built / dwell count / property class / building class / last deed book + page + date + price.</td><td><span class="tag">Live</span></td></tr>
+    <tr><td><strong>Ocean County Sheriff Foreclosure Listing</strong> (PDF)</td><td>Weekly (sheriff sales held Tuesdays at 2pm)</td><td>Upcoming sheriff sales: case number (CH-####), foreclosure docket (F-########), plaintiff, defendant, attorney, judgment amount, status (active / adjourned / bankruptcy / cancelled), block + lot + situs.</td><td><span class="tag">Live</span></td></tr>
+    <tr><td><strong>Tyler CivilView</strong> (<code>salesweb.civilview.com</code>, <code>countyId=85</code>)</td><td>Daily (when populated)</td><td>Cross-county sheriff sales index — currently empty for Ocean (Ocean has migrated their feed to the PDF). Kept as a fallback and used as a portable pattern for other NJ counties.</td><td><span class="tag">Empty</span></td></tr>
+    <tr><td><strong>Ocean County Clerk public metadata</strong> (NewVision <code>publicsearch</code>)</td><td>Daily (heartbeat only — see "Anti-bot")</td><td>168 doc-type abbreviations, 35 common-town names, last-recorded instrument book/page/inst-#, verifyDate. Powers the per-doc-type filter pills and the "Clerk index freshness" badge.</td><td><span class="tag">Metadata-only</span></td></tr>
+    <tr><td><strong>Ocean County Clerk official records search</strong> (POST <code>/api/search</code>)</td><td>n/a</td><td>Would provide deed, mortgage, lien, lis pendens, judgment recordings — the heart of patterns <code>tax</code>, <code>estate</code>, <code>code</code>, <code>lien</code>, and most of <code>transfer</code>.</td><td><span class="tag" style="background:rgba(245,158,11,0.18);color:#f59e0b">Blocked</span> (server-enforced reCAPTCHA v3)</td></tr>
+    <tr><td><strong>NJ Judgment Search</strong> + <strong>NJ Judgment Lien Public Access</strong></td><td>n/a</td><td>Statewide judgment liens.</td><td><span class="tag" style="background:rgba(245,158,11,0.18);color:#f59e0b">Blocked</span> (Imperva)</td></tr>
+    <tr><td><strong>Ocean County Surrogate</strong></td><td>n/a</td><td>Probate / decedent docket — no public web search UI.</td><td><span class="tag" style="background:rgba(239,68,68,0.18);color:#ef4444">Gap</span> (OPRA-only)</td></tr>
+    <tr><td><strong>Ocean County Property Alert Service</strong> <code>countyclerkpas.co.ocean.nj.us</code></td><td>n/a</td><td>Subscriber-only fraud-alert service.</td><td><span class="tag" style="background:rgba(239,68,68,0.18);color:#ef4444">HTTP 500</span> on probe (broken upstream)</td></tr>
+    <tr><td><strong>Municipal code enforcement</strong> (33 municipalities)</td><td>n/a</td><td>Demolition orders, condemnation notices, code-violation liens.</td><td><span class="tag" style="background:rgba(239,68,68,0.18);color:#ef4444">Out of scope</span> for this build (33 separate municipal sites).</td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <strong>Daily refresh is the product.</strong> Vendors like PropStream and DealMachine buy bulk monthly extracts. Ocean Intel hits source endpoints directly, so a sheriff sale recorded Tuesday morning is on the dashboard Wednesday morning. The freshness gap is the moat.
+</div>
+
+<h2 id="patterns">The 6-pattern stack</h2>
+
+<p>Every distress signal we collect is mapped to one (or two) of six orthogonal patterns. Orthogonal meaning the patterns don't overlap — a property in foreclosure isn't <em>also</em> in tax distress unless a separate tax-derived signal also fires.</p>
+
+<table>
+  <thead><tr><th>Pattern</th><th>Meaning</th><th>NJ-specific signals that fire it</th></tr></thead>
+  <tbody>
+    <tr><td><strong>jfc</strong></td><td>Judicial foreclosure</td><td>Sheriff PDF entries (active or adjourned). Lis pendens, notices of pending sale (clerk records — pending unblock).</td></tr>
+    <tr><td><strong>tax</strong></td><td>Tax distress</td><td>Tax sale certificates, federal/state tax liens, in-rem municipal tax foreclosures (clerk records — pending unblock). NJ MOD-IV tax-delta heuristics (when LAST_YR_TX gaps are unusual).</td></tr>
+    <tr><td><strong>estate</strong></td><td>Probate / decedent</td><td>NJ inheritance tax waivers, disclaimers (heir refusing inheritance), trust agreements, executor/administrator deeds (clerk records — pending unblock). Surrogate dockets are not exposed publicly.</td></tr>
+    <tr><td><strong>code</strong></td><td>Municipal code enforcement</td><td>Sparse — code is municipal in NJ, rarely county-recorded. Fires only when a clerk-recorded municipal lien (a subset of <code>INSTLIEN</code>) hits the official records.</td></tr>
+    <tr><td><strong>lien</strong></td><td>Non-tax encumbrances</td><td>NJ construction liens (the legal name for mechanic's liens), physician's liens, hospital liens, judgment liens, writs of execution.</td></tr>
+    <tr><td><strong>transfer</strong></td><td>Distressed transfer</td><td>Quitclaim deeds, $1 / $0 nominal-consideration deeds, sheriff's deeds, executor's/administrator's deeds. The MOD-IV layer alone fires this whenever a recent deed price ≤ $10.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="tiers">How a property becomes Hot, Warm, or Active</h2>
+
+<p><strong>Tier comes from the count of distinct patterns that fire on a property — not from a sum of weighted scores.</strong></p>
+
+<pre>n = number of distinct patterns that fired on this parcel
+if n &gt;= 3:  tier = "hot"
+elif n == 2: tier = "warm"
+elif n == 1: tier = "active"
+else: # n = 0 — drop, not a lead</pre>
+
+<p>This is deliberate. The framework spec calls out "score inflation" as a top failure mode — stack four reasonable bonuses on top of each other and your top-decile threshold becomes meaningless. Counting <em>distinct</em> patterns flips that: a property with three <em>different</em> kinds of distress (foreclosure + tax lien + decedent transfer, say) is qualitatively different from a property with three filings of the same pattern.</p>
+
+<p>Each pattern caps at 3 most-recent signals so the JSON file size stays under GitHub's 50 MB hard cap, and so the freshness signal isn't drowned out by historical clutter.</p>
+
+<h2 id="two-truths">The Two-Truths invariant</h2>
+
+<p>The dashboard's stat tiles ("3 Hot, 17 Warm, 482 Active") and the rendered table rows are derived from <em>the same</em> <code>matches(lead)</code> function. There's no separate counter. There's no second filter pipeline. The single source of truth is enforced two ways:</p>
+
+<ol>
+  <li><strong>In <code>pipeline/build_leads.py</code></strong> — before <code>leads.json</code> is written, the header's <code>tier_counts</code> and <code>pattern_counts</code> are recomputed by walking the records list. If they disagree, the pipeline raises and exits non-zero. <code>leads.json</code> is never written with drifted counts.</li>
+  <li><strong>In the dashboard</strong> — the table body and the stat tiles both call <code>RECORDS.filter(matches)</code>. There is no parallel filter logic.</li>
+</ol>
+
+<p>This guards against the most common dashboard failure: filter shows "1,200 results" but the tile says "5,000" because two different code paths computed each.</p>
+
+<h2 id="doctypes">Doc-type taxonomy</h2>
+
+<p>The clerk's <code>publicsearch</code> exposes 168 distinct doc-type abbreviations. A doc-type filter pill on the dashboard surfaces exactly the abbreviations that appear in the current <code>leads.json</code>'s signals — not all 168, just the ones we have actually attached. Each abbreviation is independently clickable.</p>
+
+<p>The full pattern map (which doc-type fires which pattern) is in <a href="https://github.com/xcerebroai/ocean-intel/blob/main/RECON.md" target="_blank">RECON.md</a> on GitHub.</p>
+
+<h2 id="anti-bot">Anti-bot encounters &amp; what's blocked</h2>
+
+<p>Honest disclosure of every defense encountered during recon, the workaround attempted, and whether it succeeded.</p>
+
+<table>
+  <thead><tr><th>System</th><th>Defense</th><th>Workaround attempted</th><th>Result</th></tr></thead>
+  <tbody>
+    <tr><td>Ocean Clerk official records search API</td><td>reCAPTCHA v3 server-enforced (<code>enableServerRecaptcha=1</code>)</td><td>Plain POST without v3 token</td><td>HTTP 400 <code>"No V3 token found"</code>. No bypass. OPRA fallback documented.</td></tr>
+    <tr><td>NJ Judgment Search / Judgment Lien Public Access</td><td>Imperva/Incapsula bot wall</td><td><code>curl_cffi</code> Chrome 120 impersonation</td><td>Imperva challenge iframe still served. No bypass.</td></tr>
+    <tr><td>Ocean Tax Board search</td><td>reCAPTCHA v2</td><td>Intentionally not attempted</td><td>Skipped — same data is sourced via NJ MOD-IV without reCAPTCHA.</td></tr>
+    <tr><td>Ocean Property Alert Service</td><td>HTTP 500 (broken upstream)</td><td>Re-probed</td><td>Server returns "Object reference not set" — service is down. Re-tested nightly via the refresh harness; auto-recovers when service comes back.</td></tr>
+  </tbody>
+</table>
+
+<div class="warn">
+  <strong>No reCAPTCHA solving.</strong> Ocean Intel does not use third-party CAPTCHA-solving services, and does not headless-browser past consent gates. When a source is blocked, we say so. The workaround is OPRA (NJ's Open Public Records Act) for monthly bulk requests, or human-in-loop for ad-hoc seeded sessions.
+</div>
+
+<h2 id="limits">Known limitations &amp; what's NOT in the data</h2>
+
+<ul>
+  <li><strong>Owner names are redacted upstream.</strong> The NJ DOIT public MOD-IV layer returns empty <code>OWNER_NAME</code> fields. We surface mailing address (which may be P.O. Box or out-of-state), situs address, year built, sales history, and full assessment, but the named-owner field is not available without the clerk-search unblock or paid commercial sources.</li>
+  <li><strong>No skip trace.</strong> Phone numbers and email addresses are not derived from public records. The CSV export includes empty <code>phone1</code> / <code>phone2</code> / <code>phone3</code> / <code>email1</code> / <code>email2</code> columns for downstream skip-trace tooling.</li>
+  <li><strong>No AVM, no ML scoring, no MLS feed.</strong> "Equity %" filtering is a planned filter; today the slider is non-functional pending an AVM data source. The framework spec calls out heuristic inflation as a failure mode — we'd rather ship a missing feature than a misleading one.</li>
+  <li><strong>No mortgage balance / payoff data.</strong> We see deed book/page and judgment amount (when foreclosure is active), but not current loan balance.</li>
+  <li><strong>Code enforcement is municipal, not county.</strong> Until per-municipal feeds are added, the <code>code</code> pattern fires only on the rare clerk-recorded municipal lien.</li>
+  <li><strong>Probate (Surrogate) data is OPRA-only.</strong> Until a public docket interface exists, the <code>estate</code> pattern fires only via clerk-recorded estate-deed and inheritance-tax-waiver instruments — which are themselves currently blocked behind the clerk reCAPTCHA wall.</li>
+  <li><strong>Sheriff PDF column-split errors.</strong> About 5% of multi-lot sheriff sales have layout-driven parser errors where the zip code or municipality wraps vertically across columns. The block + lot is correctly extracted in nearly all cases, so the parcel join still succeeds; the situs address shown for those rows may be incomplete. We chose to keep the affected rows visible (with a tagged orphan flag where needed) rather than drop them.</li>
+</ul>
+
+<h2 id="audit">Audit trail</h2>
+
+<p>Every <code>leads.json</code> the dashboard renders includes a header with:</p>
+<ul>
+  <li><code>generated_at</code> — UTC timestamp of the build</li>
+  <li><code>source_commit</code> — short git SHA of the repo at build time</li>
+  <li><code>tier_counts</code>, <code>pattern_counts</code>, <code>doc_type_counts</code> — Two-Truths-invariant counts</li>
+  <li><code>source_attach_counts</code> — how many signals each source contributed</li>
+  <li><code>warm_tier_high_confidence_pct</code> — % of warm leads where both signals are within the last 365 days</li>
+  <li><code>top_pattern_combos</code> — most common pattern stacks (e.g., <code>[jfc, lien]</code>, count)</li>
+  <li><code>clerk_heartbeat</code> — Ocean Clerk's last-recorded-instrument metadata at refresh time, so day-over-day staleness is detectable</li>
+</ul>
+
+<p>Source code, source commit, and the recon report are all on GitHub: <a href="https://github.com/xcerebroai/ocean-intel" target="_blank">github.com/xcerebroai/ocean-intel</a>.</p>
+
+<p style="margin-top:36px;font-size:13px;color:var(--text-muted)">⚡ Built by Jarvis (Just Jarvis LLC) for Quentin Flores. Operator-first.</p>
+
+<script>
+fetch("./data/leads.json", { cache: "no-cache" })
+  .then(r => r.json())
+  .then(d => { document.getElementById("last-updated").textContent = (d.generated_at || "").slice(0, 19).replace("T", " ") + " UTC"; })
+  .catch(() => { document.getElementById("last-updated").textContent = "—"; });
+</script>
+
+</body>
+</html>
