@@ -1,0 +1,53 @@
+# Raw scraped data — never committed (rebuilt on every refresh)
+data/raw/*
+!data/raw/.gitkeep
+
+# Scraper state checkpoints
+*.state.json
+
+# Refresh logs
+data/raw/*.log
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+.claude/
+
+# Playwright / browser-session profiles
+scrapers/.profile/
+scrapers/.rod_profile/
+
+# Verification dumps from scrapers
+scrapers/verify_*.txt
+scrapers/verify_*.html
+scrapers/verify_*.json
+
+# Large files (>50MB GitHub limit)
+*.zip
+*.gz
+data/*.csv
+data/*.xlsx
+!data/.gitkeep
+
+# Heartbeat lock
+HEARTBEAT.json.lock
