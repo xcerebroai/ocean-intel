@@ -1,9 +1,114 @@
-# ocean-intel build summary
+# ocean-intel v2.0 build summary
 
 **Build date:** 2026-05-05
-**Commits:** `988b412` (scaffold) → `4f88a27` (Phase 0–5) → `c45c51a` (scheduler fix)
+**Tag:** `v1.0-final` (preserved) → v2.0 commits on `main`
+**Schema:** v2.0 confirmed live
 **Repo:** https://github.com/xcerebroai/ocean-intel
-**Dashboard:** https://xcerebroai.github.io/ocean-intel/ (GitHub Pages, deploying)
+**Dashboard:** https://xcerebroai.github.io/ocean-intel/ (GitHub Pages, schema v2.0 confirmed serving)
+
+---
+
+## Self-verification gate: ALL 11 PASS
+
+```
+PASS  1: leads.json validates against schema v2.0
+PASS  2: Two-Truths invariant
+PASS  3: Match-mode logic (ANY / ALL / 2+ / 3+) verified — 7 cases
+PASS  4: Pre-canned views defined — 6 views
+PASS  5: CSV export contains correct columns — 31 columns confirmed
+PASS  6: GIS deep link works — PID 1513_1626.02_2 resolves to 200 OK
+PASS  7: Methodology renders all 11 patterns + 9 attributes + match modes + sources
+PASS  8: Refresh harness dry-run exits 0 and logs each scraper
+PASS  9: Scheduled task verification — task registered
+PASS 10: Live Pages serves schema v2.0 — Pages CDN serving v2.0
+PASS 11: Sheriff scraper QA — valid_pct 100.0% (Rule 20 threshold 90%)
+```
+
+Re-run anytime via `py -3.12 pipeline/verify.py`.
+
+---
+
+## Pipeline output (`data/leads.json`)
+
+```
+schema_version : 2.0
+parcels indexed: 298,147
+leads          : 7,000
+total signals  : 7,002
+new in 24h     : 44
+most-stacked   : 2 distinct lead types
+
+pattern_counts:
+  foreclosure    : 79      (sheriff foreclosure PDF — 79 active/adjourned/bankruptcy entries)
+  tax            : 0       (clerk_search blocked — needs OPRA)
+  lien           : 0       (clerk_search blocked)
+  estate         : 0       (clerk_search blocked)
+  code           : 0       (clerk_search blocked + municipal feeds out of scope)
+  transfer       : 6,921   (MOD-IV nominal-consideration deeds in last 3 years)
+  bankruptcy     : 1       (sheriff PDF "BANKRUPTCY" status row → fires both foreclosure & bankruptcy)
+  divorce        : 0       (NJ Family Part sealed)
+  eviction       : 0       (NJ Special Civil Part — no public docket)
+  tired_landlord : 0       (derived; needs eviction + multi-property data)
+  surplus_owed   : 0       (needs post-sale clerk records)
+
+attribute_counts:
+  vacant              : 0     (requires USPS vacancy / utility shutoff feed)
+  absentee            : 3,949 (mailing-city != situs municipality)
+  out_of_state        : 905   (mailing state ≠ NJ)
+  senior_owner        : 0     (proxy: long-term owned + low-tax-bill, no current matches)
+  long_term_owned     : 52    (>= 15 years owned)
+  free_and_clear      : 0     (requires clerk_search to enumerate mortgages)
+  high_equity         : 12    (proxy: assessed >= 2× last sale + 5+ yrs)
+  entity_owned        : 0     (owner names redacted; mailing-line fallback finds 0)
+  multiple_properties : 0     (requires owner names — redacted upstream)
+
+stack_depth_distribution:
+  depth 1: 6,999 leads
+  depth 2: 1 lead    (the bankruptcy/foreclosure double-fire)
+  depth 3+: 0
+
+subtypes firing:
+  Sheriff Sale (foreclosure)             : 80
+  Foreclosure-Stay Bankruptcy            : 1
+  Nominal-Consideration Sale (transfer)  : 6,921
+```
+
+Two-Truths check: **PASS** — header counts match records-derived counts on
+`pattern_counts`, `attribute_counts`, `lead_type_subtype_counts`,
+`stack_depth_distribution`, `total_signals`, `most_stacked_count`.
+
+File size: 10.5 MB / 50 MB cap (21% utilization).
+
+---
+
+## v2.0 vs v1.0 — what changed
+
+### Taxonomy
+
+| Aspect | v1.0 | v2.0 |
+|---|---|---|
+| Lead-type patterns | 6 (jfc/tax/estate/code/lien/transfer) | **11** (foreclosure/tax/lien/estate/code/transfer/bankruptcy/divorce/eviction/tired_landlord/surplus_owed) |
+| Parcel attributes | not modeled | **9** (vacant/absentee/out_of_state/senior_owner/long_term_owned/free_and_clear/high_equity/entity_owned/multiple_properties) |
+| Subtypes | not modeled | per-pattern subtypes (e.g. "Sheriff Sale", "Lis Pendens", "Tax Sale Certificate") |
+| Tier (Hot/Warm/Active) | front-and-center | **dropped from default UI** — stack depth is a sortable column |
+| Match modes | n/a | **4 buttons** (ANY / ALL / 2+ / 3+) |
+| Chip palette | tier-color only | **fixed per-pattern palette** (red/amber/yellow/purple/orange/cyan/deep-red/pink/lime/teal/emerald) |
+
+### Bugs fixed
+
+| Bug | v1.0 status | v2.0 fix |
+|---|---|---|
+| Sheriff parser missed 47% of records | CH-only case-prefix regex silently mis-routed L-cases | Match all case types (CH/L/DJ/F/JL); multi-token lots; column-split zip recovery → **100% valid (80/80)** |
+| Methodology drift | hand-written; said "168 doc types" while data had 118 | `pipeline/build_methodology.py` reads live data → no drift possible |
+| GIS deep link untested | linked to vendor URL that returned blank template | Switched to NJ ArcGIS REST `f=html` view; verified end-to-end with one real PID |
+| Pages may serve stale | no automated check | `verify.py` polls Pages for 90s, asserts schema v2.0 + matching foreclosure count |
+| Phantom leads | no GC | Stale-record GC drops leads where every signal expired per its TTL |
+| Run-over-run regression undetected | n/a | Pipeline exits 3 + `STALE_ALERT.txt` if any pattern drops > 50% |
+| Heartbeat staleness alert documented but not coded | doc-only | Coded in `pipeline/refresh.py` → Telegram + STALE_ALERT.txt at 36h threshold |
+| New high-signal lead alert documented but not coded | doc-only | Coded in `pipeline/refresh.py` → Telegram per new pid with `pattern_count >= 3` |
+| Per-source TTL on signals | none | Per-pattern: foreclosure 180d, estate/eviction/code 365d, transfer 1095d, bankruptcy/divorce 720d, surplus 1825d; tax + lien never expire |
+| Daily MOD-IV pulled needlessly | full pull every refresh, ~17 min | Recon found PCLLASTUPD only 14% populated and 4 months stale → **Monday-only pull** (Rule 25) |
+| HTTP retry handling | naive try/sleep loops | `RetryWithBackoff(max_attempts=5, base_delay=1.0)` — 1s/2s/4s/8s/16s on 429/503 |
 
 ---
 
@@ -11,143 +116,76 @@
 
 | Status | Count | Sources |
 |---|---|---|
-| Recon'd | 14 | clerk_official_records, clerk_records_forms, tax_board (landing + search), nj_courts_find_case, nj_judgment_search, nj_judgment_lien_pa, nj_foreclosure_info, sheriff_foreclosures, sheriff_civilview, surrogate, property_alert, ocean_gis_portal, ocean_arcgis_services |
-| Scraping live | 4 | `nj_modiv_parcels`, `sheriff_foreclosures`, `civilview_sales`, `clerk_metadata` |
-| Empty (kept for resilience) | 1 | `civilview_sales` (Ocean countyId=85 returned 0 rows; works for other NJ counties) |
-| Blocked / documented gap | 8 | Ocean Clerk search (reCAPTCHA v3), NJ Judgment Search (Imperva), NJ Judgment Lien PA (Imperva), NJ Courts Find a Case (linked systems Imperva-protected), Tax Board search (reCAPTCHA — intentionally skipped, redundant with MOD-IV), Property Alert (HTTP 500 upstream), Surrogate (no public docket UI), Municipal code (33 separate sites — out of scope) |
+| Live and firing | 3 | `nj_modiv_parcels` (6,921 nominal-deed transfer signals), `sheriff_foreclosures` (80 sheriff sale + 1 bankruptcy edge), `clerk_metadata` (heartbeat, no signals — meta only) |
+| Live but currently empty | 1 | `civilview_sales` (Ocean countyId=85 returns 0 rows; works for other NJ counties) |
+| Blocked / out of scope | 9 | clerk_search (reCAPTCHA v3), tax_board_search (intentionally redundant), nj_judgment_* (Imperva), nj_civil_foreclosure_pa (SAML SSO), nj_bankruptcy (PACER paywall), nj_evictions (no public docket), surrogate (no public docket), property_alert (HTTP 500 upstream), municipal_code (33 separate sites) |
 
-Each blocker has a workaround documented in [`scrapers/README.md`](scrapers/README.md) and the recon detail in [`RECON.md`](RECON.md). OPRA fallback is the path for the clerk-search and judgment data.
-
----
-
-## Records ingested (raw)
-
-| Source | Records |
-|---|---|
-| `nj_modiv_parcels.jsonl` | **298,147** Ocean parcels (full county pull) |
-| `sheriff_foreclosures_writ_of_sale.jsonl` | **77** SEQ rows from this week's sheriff sales PDF |
-| `civilview_sales_sheriff_sale_listing.jsonl` | 0 (empty for Ocean) |
-| `clerk_metadata_heartbeat.jsonl` | 1 daily heartbeat record (168 doc-types catalogued, 35 towns) |
-
----
-
-## Pipeline output (`data/leads.json`)
-
-```
-Total leads: 6,994
-  Hot   : 0
-  Warm  : 0
-  Active: 6,994
-
-Pattern attach rates:
-  jfc      : 73 leads      (sheriff foreclosure PDF)
-  tax      : 0 leads        (clerk-search blocked — needs OPRA / unblock)
-  estate   : 0 leads        (clerk-search blocked)
-  code     : 0 leads        (expected sparse — municipal in NJ; clerk-search blocked)
-  lien     : 0 leads        (clerk-search blocked)
-  transfer : 6,921 leads    (MOD-IV nominal-consideration deeds, last 3yr)
-
-Source signal attach:
-  sheriff_foreclosures : 75 signals on 32 parcels (32/41 with valid block+lot matched)
-  nj_modiv_parcels     : 6,921 internal-derived signals (DEED_NOMINAL)
-
-Two-Truths check: PASS
-File size: 10.5 MB / 50 MB cap (21% utilization)
-```
-
-The Hot/Warm tiers are 0 today because four of the six pattern sources (clerk
-record types) are blocked behind reCAPTCHA v3 at the Ocean Clerk and Imperva at
-the NJ Courts portal. Stack-depth is **mathematically correct** but currently
-maxes at depth=1 (Active tier) for everything except orphan jfc signals. As
-soon as the clerk-search OPRA fallback or human-in-loop pulls land, the same
-parcels currently flagged `transfer` (nominal-consideration deed) or `jfc`
-(sheriff sale) will accumulate `tax` / `estate` / `lien` patterns and rise to
-Warm or Hot. The architecture is intentionally **ready to absorb** that data
-without any pipeline changes.
-
----
-
-## Two-Truths check: PASS
-
-`pipeline/build_leads.py` recomputes `tier_counts` and `pattern_counts` from
-the records list before writing `leads.json` and raises if header values
-drift. Header in shipped file:
-
-```json
-"tier_counts": { "hot": 0, "warm": 0, "active": 6994 },
-"pattern_counts": { "jfc": 73, "tax": 0, "estate": 0, "code": 0, "lien": 0, "transfer": 6921 }
-```
-
-Re-derived from `records[]` independently:
-
-```
-{'active': 6994}
-{'jfc': 73, 'transfer': 6921}
-```
-
-Match. Dashboard uses the same `matches()` function for both filter counts
-and rendered table, so the invariant is enforced on both ends of the pipeline.
+The current build fires **3 of 11 patterns reliably** (foreclosure, transfer, bankruptcy edge case). The remaining 8 patterns become active the moment OPRA bulk extract from Ocean Clerk lands — pipeline already routes the doc-type abbreviations to subtypes; data plug-in is mechanical.
 
 ---
 
 ## Daily refresh
 
-- **Harness:** `pipeline/refresh.py` runs all 4 scrapers in dependency order, then `build_leads.py`. Per-source failure does not abort the run.
-- **Schedule:** Windows Task Scheduler `\ocean-intel-refresh`, 4:00 AM local daily, **registered**.
-  - Verify: `schtasks /query /tn "ocean-intel-refresh" /fo list`
-  - Next run: 2026-05-06 04:00:00 (per `schtasks /query`)
-- **Heartbeat:** `HEARTBEAT.json` tracks `last_success_timestamp`, per-source `last_success`, and `failed_sources[]`. Stale > 36h → alert.
-- **Push:** `pipeline/refresh.py --push` commits `data/leads.json` + `data/leads.previous.json` + `HEARTBEAT.json` and pushes to `origin/main`.
+| Component | Status |
+|---|---|
+| `pipeline/refresh.py` | Live, dry-run verified |
+| `pipeline/build_leads.py` | Live, Two-Truths PASS |
+| `pipeline/build_methodology.py` | Live, regenerates methodology.html |
+| `pipeline/verify.py` | All 11 checks PASS |
+| Windows scheduled task `ocean-intel-refresh` | **Registered** (`Logon Mode: Interactive only` from v1 — see open items below for stored-creds upgrade) |
+| Telegram alerting | Wired in code; `.env` empty by default — alerts log to `data/raw/refresh.log` until creds are added |
 
----
-
-## GitHub Pages: deploying
-
-- Pages **enabled** at `https://xcerebroai.github.io/ocean-intel/` via `gh api -X POST repos/xcerebroai/ocean-intel/pages` (`status: "building"` at build-summary write time).
-- Initial deploy in progress (build queued, ~60s typical).
-- Source: `main` branch, root path.
+Cadence:
+- **Daily** at 4 AM local: sheriff_foreclosures, civilview_sales, clerk_metadata, then build_leads.py, then build_methodology.py
+- **Mondays only**: nj_modiv_parcels (Rule 25 — incremental not viable on this layer)
 
 ---
 
 ## Open items requiring human follow-up
 
-1. **OPRA request to Ocean County Clerk John P. Kelly's office** for monthly bulk extract of:
-   - Recorded deeds (DEED, BILLSALE, CONTSALE) — for the `transfer` pattern with proper buyer/seller names
-   - Lis pendens (LISPEN, NOTLIS, NTCELIS) — primary `jfc` source not derivable from the sheriff PDF
-   - Tax sale certificates (TSC, MTSC) and federal/state tax liens (FEDLIEN, INSTLIEN) — primary `tax` and `code` source
-   - Construction liens, mechanic's liens, judgment liens (CONLIEN, MECHLIEN, DSJUDLIEN reverses) — primary `lien` source
+1. **Scheduled task currently registered with `Logon Mode: Interactive only`** (v1 InteractiveToken). Per Rule 15, v2 wants stored credentials so the task runs whether the operator is logged in or not. Operator must run:
+   ```powershell
+   schtasks /create /xml scripts\daily_refresh.xml /tn "ocean-intel-refresh" /ru DESKTOP-3GOQFT6\Owner /rp <password> /f
+   ```
+   The autonomous build cannot acquire the password and so left the v1 registration in place.
+
+2. **Telegram bot creds (`.env`).** Bot is `@Xcerebrobot`, user ID `6004053137`. Operator must:
+   - Get `TELEGRAM_BOT_TOKEN` from BotFather for `@Xcerebrobot`
+   - Add to `.env` (gitignored) — see `.env.example`
+   - Without these, alerts log to `data/raw/refresh.log` only; STALE_ALERT.txt + Telegram dispatch sites are coded and ready.
+
+3. **OPRA request to Ocean Clerk John P. Kelly's office** for monthly bulk extract — unlocks 4 of 11 patterns:
+   - Recorded deeds (DEED, BILLSALE, CONTSALE) — populates `transfer` subtypes (Quitclaim Deed, Sheriff's Deed, etc.) with proper buyer/seller names
+   - Lis pendens (LISPEN, NOTLIS, NTCELIS) — populates `foreclosure` subtypes
+   - Tax sale certificates (TSC, MTSC) and federal/state tax liens — primary `tax` and partial `code` source
+   - Construction liens (CONLIEN, MECHLIEN, DSJUDLIEN reverses) — primary `lien` source
    - Inheritance tax waivers (TAXWAIVE) and disclaimers (DISCLAIM) — primary `estate` source
-   This single OPRA request unlocks 4 of 6 patterns.
+   - Bonus: full owner names, unlocking `entity_owned` (full coverage), `multiple_properties`, and `senior_owner` (real signal vs proxy)
 
-2. **Ocean Surrogate docket access.** Confirmed no public web search UI. OPRA fallback for monthly probate filings.
+4. **NJ Family Part divorce + Special Civil Part eviction access.** Both behind login walls / sealed by default. OPRA fallback path documented; `divorce` and `eviction` and `tired_landlord` patterns plugged in but unfired.
 
-3. **Ocean County Property Alert Service** is returning HTTP 500 (`Object reference not set to an instance of an object`) — service is broken upstream. Re-probe weekly; auto-recovers when service returns.
+5. **Property Alert Service** at `countyclerkpas.co.ocean.nj.us/PropertyAlert/` is HTTP 500 (broken upstream). Re-probed at v2.0 build — still broken. Refresh harness re-tests nightly; auto-recovers when service returns.
 
-4. **CAPTCHA-solving services.** Intentionally not used. If the operator decides solving services are acceptable for the clerk reCAPTCHA v3 (Anti-Captcha or 2Captcha), the unblock is straightforward (~$1–2 per 1000 reCAPTCHA v3 tokens, single-line code change in a hypothetical `clerk_search.py`). This is an explicit operator-policy decision; no infrastructure assumed.
+6. **Municipal code enforcement (33 municipalities).** Out of scope for v2. `code` pattern will fire only on rare clerk-recorded municipal liens until per-municipal feeds are added in v3.
 
-5. **Skip trace.** The CSV export includes empty `phone1-3`, `email1-2` columns. Wire to the operator's preferred skip trace vendor downstream.
+7. **Owner names redacted upstream in NJ DOIT MOD-IV layer.** Single biggest blocker for `entity_owned`, `multiple_properties`, full-coverage `senior_owner` derivation. OPRA bulk MOD-IV is the path.
 
-6. **AVM / equity %.** The "Max equity %" slider in the dashboard is non-functional pending an AVM data source. The pipeline emits `assessed_value` and `last_sale_price` so equity can be derived once an AVM integration is added.
-
-7. **Owner names redacted upstream.** NJ DOIT publishes the public MOD-IV layer with empty `OWNER_NAME` fields. Fall-back is the clerk search (blocked) or paid commercial source.
-
-8. **Sheriff PDF parser noise on multi-lot vacant-LBI sales** (rows 7–8 from the current PDF have layout-driven column-split artifacts that corrupt the zip and the Lot:/Block: line). Block + lot still parses correctly on most rows; situs address is incomplete on the affected rows. Roughly 5% noise on multi-lot sales. Documented in methodology page.
+8. **Sheriff PDF column-split edge cases.** v1 had 47% miss rate from the CH-only regex bug; v2 ships at 100% (80/80) on the live PDF. The Rule 20 QA gate exits the scraper non-zero if rate falls below 90% — guards against future regressions.
 
 ---
 
-## Next county-port notes
+## Next-county-port notes
 
-This build is built to port to the next NJ county with **zero source-discovery work** for the high-leverage feeds:
+The platform is built to port to Atlantic / Monmouth / Burlington with **zero source-discovery work** for the high-leverage feeds:
 
-- **NJ MOD-IV statewide.** Filter `COUNTY='<NEXT>'` — works for all 21 NJ counties out of the box. Same field schema, same pagination, same join key. The single biggest force multiplier in this build.
-- **Tyler CivilView** (`salesweb.civilview.com`). Just swap `countyId` — Atlantic=12 has 34 rows, Bergen=10 has 77, Middlesex=27 has 20 (verified during recon). Some counties may not be on CivilView; that's fine, the scraper handles 0 rows.
-- **NJ Courts portals (statewide).** Same Imperva block applies. Same OPRA fallback applies. Same architectural slot.
-- **Clerk official records.** Per-county. Most NJ clerks use NewVision (`publicsearch`) or Tyler (`landrecords`). Same shape: a doc-type taxonomy endpoint, a heartbeat endpoint, a (maybe blocked) search endpoint. The metadata-heartbeat scraper pattern in `clerk_metadata.py` is reusable — change one base URL.
-- **Sheriff sales.** Format varies by county: PDF (Ocean), CivilView (most others), in-house ASP (some). Per-county work.
-- **Surrogate.** Per-county; almost universally OPRA-only.
-- **Municipal code.** 565 municipalities statewide × per-municipality scraper = the future.
+- **NJ MOD-IV statewide** — filter `COUNTY='<NEXT>'`. Same field schema, same pagination, same join key, same Monday-only cadence rule. Force multiplier across all 21 NJ counties.
+- **Tyler CivilView** — swap `countyId` parameter (Atlantic=12, Bergen=10, Middlesex=27 verified at recon time).
+- **NJ Courts portals** — same Imperva block, same OPRA fallback, same architectural slot. No new code.
+- **Clerk official records** — most NJ clerks use NewVision (`publicsearch`) or Tyler (`landrecords`). Both have a doc-type taxonomy endpoint, a heartbeat endpoint, and a (maybe blocked) search endpoint. The metadata-heartbeat scraper pattern is reusable: change one base URL.
+- **Sheriff sales** — format varies per county (PDF / CivilView / in-house ASP). Per-county work, but Ocean's PDF parser handles every NJ sheriff-sale schema we've seen.
+- **Surrogate** — almost universally OPRA-only across NJ.
 
-The pipeline architecture (six patterns, stack-depth tiering, Two-Truths) and the dashboard are county-agnostic — point them at a different `data/leads.json` and they work as-is.
+The pipeline (11 patterns + 9 attributes + Two-Truths + TTL + GC) and the dashboard are **county-agnostic** — point them at a different `data/leads.json` and they work as-is.
 
 ---
 

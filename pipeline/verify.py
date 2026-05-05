@@ -57,8 +57,8 @@ def fail(check_id: str, name: str, detail: str, repro: str = "") -> None:
 
 
 def passcheck(check_id: str, name: str, note: str = "") -> None:
-    passes.append(f"{check_id}: {name}{' — ' + note if note else ''}")
-    print(f"  PASS  {check_id}: {name}{' — ' + note if note else ''}")
+    passes.append(f"{check_id}: {name}{' - ' + note if note else ''}")
+    print(f"  PASS  {check_id}: {name}{' - ' + note if note else ''}")
 
 
 # ------------------------ Python-side matches() reference -------------------
@@ -412,7 +412,7 @@ def check_10_pages(leads: dict) -> None:
 
 
 def check_11_qa() -> None:
-    name = "Sheriff scraper QA (Rule 20: ≥90% block+lot+mun_name)"
+    name = "Sheriff scraper QA (Rule 20: >=90% block+lot+mun_name)"
     if not QA.exists():
         fail("11", name, "sheriff_foreclosures.qa.json missing — run sheriff scraper")
         return
@@ -421,7 +421,7 @@ def check_11_qa() -> None:
     if pct < 90.0:
         fail("11", name, f"valid_pct {pct}% < 90% threshold")
         return
-    passcheck("11", name, f"valid_pct {pct}% ≥ 90%")
+    passcheck("11", name, f"valid_pct {pct}% >= 90%")
 
 
 # ============================== Main ========================================
