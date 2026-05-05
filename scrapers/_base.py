@@ -136,6 +136,43 @@ class RateLimit:
         self._last = time.monotonic()
 
 
+# HTTP retry with exponential backoff (Rule 24) -------------------------------
+
+class RetryWithBackoff:
+    """Wraps an HTTP call. Retries on 429 / 503 / network errors with backoff
+    1s, 2s, 4s, 8s, 16s. After 5 failures, raises the last exception.
+
+    Usage:
+        retry = RetryWithBackoff()
+        r = retry.call(lambda: requests.get(url, timeout=30))
+        r.raise_for_status()
+    """
+
+    def __init__(self, max_attempts: int = 5, base_delay: float = 1.0) -> None:
+        self.max_attempts = max_attempts
+        self.base_delay = base_delay
+
+    def call(self, fn):
+        last_exc: BaseException | None = None
+        for attempt in range(self.max_attempts):
+            try:
+                resp = fn()
+                # Treat 429/503 as retryable
+                status = getattr(resp, "status_code", None)
+                if status in (429, 503):
+                    raise RuntimeError(f"retryable HTTP {status}")
+                return resp
+            except Exception as exc:
+                last_exc = exc
+                if attempt == self.max_attempts - 1:
+                    break
+                delay = self.base_delay * (2 ** attempt)
+                err(f"attempt {attempt + 1}/{self.max_attempts} failed ({exc}); sleeping {delay:.0f}s")
+                time.sleep(delay)
+        assert last_exc is not None
+        raise last_exc
+
+
 # Reset support ----------------------------------------------------------------
 
 def reset_source(source: str, doctypes: list[str] | None = None) -> None:

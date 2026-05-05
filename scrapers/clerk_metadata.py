@@ -31,7 +31,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _base import (  # noqa: E402
-    UA, RateLimit, StopFlag, append_jsonl,
+    UA, RateLimit, RetryWithBackoff, StopFlag, append_jsonl,
     err, jsonl_path, log, reset_source, save_state,
 )
 
@@ -58,6 +58,7 @@ def main() -> int:
     sess.headers.update({"User-Agent": UA, "Accept": "application/json"})
 
     rl = RateLimit(min_seconds=2.0)
+    retry = RetryWithBackoff(max_attempts=5, base_delay=1.0)
     flag = StopFlag()
     flag.install()
 
@@ -69,7 +70,7 @@ def main() -> int:
     }
     try:
         rl.wait()
-        ci = sess.get(f"{BASE}/api/search/clientinfo", timeout=20).json()
+        ci = retry.call(lambda: sess.get(f"{BASE}/api/search/clientinfo", timeout=20)).json()
         rec["client_info"] = ci
         rec["verifyDate"] = ci.get("verifyDate")
         rec["lastDocumentRecordedDateTime"] = ci.get("lastDocumentRecordedDateTime")
@@ -78,14 +79,14 @@ def main() -> int:
         err(f"clientinfo failed: {e}")
     try:
         rl.wait()
-        dt = sess.get(f"{BASE}/api/document/doctypes", timeout=20).json()
+        dt = retry.call(lambda: sess.get(f"{BASE}/api/document/doctypes", timeout=20)).json()
         rec["doctypes"] = dt
         rec["doctypes_count"] = sum(len(g.get("children", [])) for g in dt if g.get("name") == "ALL")
     except Exception as e:
         err(f"doctypes failed: {e}")
     try:
         rl.wait()
-        ct = sess.get(f"{BASE}/api/document/commonTowns", timeout=20).json()
+        ct = retry.call(lambda: sess.get(f"{BASE}/api/document/commonTowns", timeout=20)).json()
         rec["common_towns"] = ct
         rec["common_towns_count"] = len(ct)
     except Exception as e:

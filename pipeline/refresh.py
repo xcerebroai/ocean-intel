@@ -1,19 +1,21 @@
 """
-refresh.py — daily orchestrator. Runs each scraper as a subprocess in
-dependency order, then build_leads.py, then optionally commits + pushes.
+refresh.py (v2.0) — daily orchestrator. Runs each scraper as a subprocess in
+dependency order, then build_leads.py, then build_methodology.py, then
+optionally commits + pushes.
 
-Design rules:
-  - One per-source failure does not abort the whole run.
-  - Heartbeat tracks per-source last_success / failed_sources.
-  - Pipeline / Two-Truths failure is a hard exit (code 2). Some sources can be
-    stale; the pipeline cannot.
-  - Logs to data/raw/refresh.log (append-mode, ISO timestamps).
-  - --push commits leads.json + leads.previous.json + HEARTBEAT.json and
-    pushes to origin/main.
+v2.0 additions:
+  - Heartbeat staleness check (Rule 16): if HEARTBEAT.json.last_success_timestamp
+    is older than 36h, write STALE_ALERT.txt and try Telegram.
+  - Parcel master scheduled weekly (Rule 25 enforcement): nj_modiv_parcels
+    runs only on Monday (or with --force-parcels).
+  - Telegram new-high-signal-lead alert (Rule 17): after pipeline succeeds,
+    diff records vs leads.previous.json. Each new lead with
+    pattern_count >= 3 → individual Telegram message.
+  - Run-over-run regression alert (Rule 19): pipeline exit 3 → log + Telegram.
 
 CLI:
   python pipeline/refresh.py [--push] [--since-days N] [--source NAME]
-                             [--dry-run] [--no-pipeline]
+                             [--dry-run] [--no-pipeline] [--force-parcels]
 """
 from __future__ import annotations
 import argparse
@@ -27,16 +29,20 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LOG = ROOT / "data" / "raw" / "refresh.log"
 HEARTBEAT = ROOT / "HEARTBEAT.json"
-PYTHON = sys.executable  # whichever interpreter is running this is what we use
+STALE_ALERT = ROOT / "STALE_ALERT.txt"
+LEADS = ROOT / "data" / "leads.json"
+LEADS_PREV = ROOT / "data" / "leads.previous.json"
+ENV_FILE = ROOT / ".env"
+PYTHON = sys.executable
 
-# Dependency order: parcels first (signal sources may attach to parcels later)
+DASHBOARD_URL = "https://xcerebroai.github.io/ocean-intel/"
+
 SOURCES: list[dict] = [
     {
         "name": "nj_modiv_parcels",
         "script": "scrapers/nj_modiv_parcels.py",
         "supports_since": True,
-        # Force a full county pull weekly (Mondays). Otherwise incremental on PCLLASTUPD.
-        "weekly_full_pull_dow": 0,  # Monday=0
+        "weekly_only_dow": 0,  # Monday — see Rule 25; skip the rest of the week
     },
     {
         "name": "sheriff_foreclosures",
@@ -55,6 +61,52 @@ SOURCES: list[dict] = [
     },
 ]
 
+
+# ----- .env / Telegram --------------------------------------------------------
+
+def load_env() -> dict[str, str]:
+    if not ENV_FILE.exists():
+        return {}
+    out: dict[str, str] = {}
+    for line in ENV_FILE.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, _, v = line.partition("=")
+        out[k.strip()] = v.strip().strip('"').strip("'")
+    return out
+
+
+def telegram_send(text: str) -> bool:
+    """Send a Telegram message. Returns True on success. Logs and returns
+    False if no creds OR if the request fails. Never raises."""
+    env = load_env()
+    bot = env.get("TELEGRAM_BOT_TOKEN") or os.environ.get("TELEGRAM_BOT_TOKEN")
+    chat = env.get("TELEGRAM_USER_ID") or env.get("TELEGRAM_CHAT_ID") or os.environ.get("TELEGRAM_USER_ID")
+    if not (bot and chat):
+        log_line(f"  telegram: SKIP (no creds in .env)")
+        return False
+    try:
+        import urllib.request
+        import urllib.parse
+        url = f"https://api.telegram.org/bot{bot}/sendMessage"
+        data = urllib.parse.urlencode({
+            "chat_id": chat,
+            "text": text,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": "true",
+        }).encode()
+        req = urllib.request.Request(url, data=data, method="POST")
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            ok = resp.status == 200
+        log_line(f"  telegram: {'OK' if ok else 'FAIL'}")
+        return ok
+    except Exception as e:
+        log_line(f"  telegram: ERR {e}")
+        return False
+
+
+# ----- Logging / heartbeat ----------------------------------------------------
 
 def log_line(msg: str) -> None:
     ts = datetime.now(timezone.utc).isoformat()
@@ -78,23 +130,53 @@ def save_heartbeat(hb: dict) -> None:
     HEARTBEAT.write_text(json.dumps(hb, indent=2), encoding="utf-8")
 
 
-def run_scraper(src: dict, since_days: int | None, dry_run: bool) -> tuple[bool, dict]:
+# ----- Staleness check (Rule 16) ----------------------------------------------
+
+def check_heartbeat_staleness() -> None:
+    hb = load_heartbeat()
+    last_ts = hb.get("last_success_timestamp")
+    if not last_ts:
+        return
+    try:
+        last = datetime.fromisoformat(last_ts.replace("Z", "+00:00"))
+    except Exception:
+        return
+    age_h = (datetime.now(timezone.utc) - last).total_seconds() / 3600.0
+    if age_h > 36:
+        msg = (
+            f"<b>[ocean-intel]</b> heartbeat stale\n"
+            f"last_success_timestamp = {last_ts}\n"
+            f"age = {age_h:.1f}h > 36h threshold"
+        )
+        STALE_ALERT.write_text(
+            f"[{datetime.now(timezone.utc).isoformat()}]\n{msg}\n",
+            encoding="utf-8",
+        )
+        log_line(f"  STALE ALERT: heartbeat {age_h:.1f}h old")
+        telegram_send(msg)
+
+
+# ----- Scraper subprocess wrapper ---------------------------------------------
+
+def run_scraper(src: dict, since_days: int | None, dry_run: bool, force_parcels: bool) -> tuple[bool, dict]:
     name = src["name"]
     script = ROOT / src["script"]
     if not script.exists():
         log_line(f"  [{name}] SKIP — script missing: {script}")
         return False, {"error": "script missing"}
 
+    # Rule 25: parcel scraper runs Mondays only unless forced.
+    weekly_only_dow = src.get("weekly_only_dow")
+    if weekly_only_dow is not None and not force_parcels:
+        if date.today().weekday() != weekly_only_dow:
+            log_line(f"  [{name}] SKIP (weekly cadence — Monday only)")
+            return True, {"skipped": "weekly_cadence"}
+
     cmd = [PYTHON, str(script)]
-    if src.get("supports_since") and since_days is not None:
-        # Force a full re-pull on configured weekday for parcels
-        full_pull_dow = src.get("weekly_full_pull_dow")
-        if full_pull_dow is not None and date.today().weekday() == full_pull_dow:
-            log_line(f"  [{name}] weekly full pull (Monday)")
-            cmd.append("--reset")
-        else:
-            since = (date.today() - timedelta(days=since_days)).isoformat()
-            cmd.extend(["--since", since])
+    if src.get("supports_since") and since_days is not None and weekly_only_dow is None:
+        # Daily-source incremental window
+        since = (date.today() - timedelta(days=since_days)).isoformat()
+        cmd.extend(["--since", since])
 
     log_line(f"  [{name}] $ {' '.join(cmd[1:])}")
     if dry_run:
@@ -104,7 +186,7 @@ def run_scraper(src: dict, since_days: int | None, dry_run: bool) -> tuple[bool,
     try:
         proc = subprocess.run(
             cmd, cwd=str(ROOT),
-            capture_output=True, text=True, timeout=60 * 60,  # 1h max per scraper
+            capture_output=True, text=True, timeout=60 * 60,
         )
     except subprocess.TimeoutExpired:
         log_line(f"  [{name}] FAIL — timeout (60min)")
@@ -124,10 +206,13 @@ def run_scraper(src: dict, since_days: int | None, dry_run: bool) -> tuple[bool,
     return True, {"elapsed_s": elapsed}
 
 
-def run_pipeline(dry_run: bool) -> bool:
+# ----- Pipeline + methodology -------------------------------------------------
+
+def run_pipeline(dry_run: bool) -> int:
+    """Returns the build_leads.py exit code."""
     log_line("Pipeline: build_leads.py")
     if dry_run:
-        return True
+        return 0
     try:
         proc = subprocess.run(
             [PYTHON, str(ROOT / "pipeline" / "build_leads.py")],
@@ -135,33 +220,100 @@ def run_pipeline(dry_run: bool) -> bool:
         )
     except subprocess.TimeoutExpired:
         log_line("  pipeline timeout")
-        return False
+        return 99
     for line in proc.stdout.splitlines():
         log_line(f"    | {line}")
     if proc.returncode != 0:
         for line in proc.stderr.splitlines()[-10:]:
             log_line(f"    ! {line}")
         log_line(f"  pipeline FAIL exit={proc.returncode}")
-        return False
+        if proc.returncode == 3:
+            telegram_send(
+                "<b>[ocean-intel]</b> Run-over-run regression detected. "
+                f"Pipeline exited 3. See <code>STALE_ALERT.txt</code>."
+            )
+        return proc.returncode
     log_line("  pipeline OK")
+    return 0
+
+
+def run_methodology(dry_run: bool) -> bool:
+    log_line("Methodology: build_methodology.py")
+    script = ROOT / "pipeline" / "build_methodology.py"
+    if not script.exists():
+        log_line("  build_methodology.py missing — skipping")
+        return True
+    if dry_run:
+        return True
+    try:
+        proc = subprocess.run(
+            [PYTHON, str(script)], cwd=str(ROOT),
+            capture_output=True, text=True, timeout=60,
+        )
+    except subprocess.TimeoutExpired:
+        log_line("  methodology timeout")
+        return False
+    if proc.returncode != 0:
+        log_line(f"  methodology FAIL exit={proc.returncode}")
+        for line in proc.stderr.splitlines()[-5:]:
+            log_line(f"    ! {line}")
+        return False
+    log_line("  methodology OK")
     return True
 
+
+# ----- New high-signal lead diff (Rule 17) ------------------------------------
+
+def alert_new_high_signal_leads() -> int:
+    """After the pipeline writes leads.json, diff vs leads.previous.json. New
+    leads (by pid) with pattern_count >= 3 get individual Telegram messages.
+    Returns count of alerts dispatched."""
+    if not LEADS.exists():
+        return 0
+    try:
+        cur = json.loads(LEADS.read_text(encoding="utf-8"))
+    except Exception:
+        return 0
+    prev_pids: set[str] = set()
+    if LEADS_PREV.exists():
+        try:
+            prev = json.loads(LEADS_PREV.read_text(encoding="utf-8"))
+            prev_pids = {r.get("pid") for r in prev.get("records", []) if r.get("pid")}
+        except Exception:
+            pass
+    pat_disp = cur.get("pattern_display", {})
+    sent = 0
+    for r in cur.get("records", []):
+        pid = r.get("pid")
+        if not pid or pid in prev_pids:
+            continue
+        if r.get("pattern_count", 0) < 3:
+            continue
+        chips = [pat_disp.get(p, p) for p in r.get("patterns", [])]
+        msg = (
+            f"<b>[ocean-intel]</b> NEW {r['pattern_count']}+ stack lead\n"
+            f"<b>{pid}</b> — {r.get('situs_address') or ''}, {r.get('mun_name') or ''}\n"
+            f"Lead types: {', '.join(chips)}\n"
+            f'<a href="{DASHBOARD_URL}#pid={pid}">Open in dashboard</a>'
+        )
+        if telegram_send(msg):
+            sent += 1
+    if sent:
+        log_line(f"  alerted {sent} new high-signal lead(s)")
+    return sent
+
+
+# ----- Git push ---------------------------------------------------------------
 
 def run_git_push(commit_msg: str, dry_run: bool) -> bool:
     log_line(f"git: stage + commit + push  ({commit_msg!r})")
     if dry_run:
         return True
-    try:
-        subprocess.check_call(
-            ["git", "add", "data/leads.json", "data/leads.previous.json", "HEARTBEAT.json"],
-            cwd=str(ROOT),
-        )
-    except subprocess.CalledProcessError:
-        # leads.previous.json may not exist on first run
-        subprocess.run(
-            ["git", "add", "data/leads.json", "HEARTBEAT.json"],
-            cwd=str(ROOT), check=False,
-        )
+    files = ["data/leads.json", "data/leads.previous.json", "HEARTBEAT.json", "methodology.html"]
+    if STALE_ALERT.exists():
+        files.append(STALE_ALERT.name)
+    for f in files:
+        subprocess.run(["git", "add", f], cwd=str(ROOT), check=False)
     diff_proc = subprocess.run(
         ["git", "diff", "--cached", "--quiet"], cwd=str(ROOT)
     )
@@ -181,58 +333,83 @@ def run_git_push(commit_msg: str, dry_run: bool) -> bool:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--push", action="store_true", help="commit + push leads.json after pipeline")
+    ap.add_argument("--push", action="store_true")
     ap.add_argument("--since-days", type=int, default=7)
-    ap.add_argument("--source", default="", help="run only this source by name")
+    ap.add_argument("--source", default="")
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--no-pipeline", action="store_true", help="skip the build_leads step (scrapers only)")
+    ap.add_argument("--no-pipeline", action="store_true")
+    ap.add_argument("--force-parcels", action="store_true",
+                    help="ignore Monday-only weekly cadence and run nj_modiv_parcels")
     args = ap.parse_args()
 
     log_line("=" * 60)
-    log_line(f"refresh.py start  push={args.push}  since_days={args.since_days}  source={args.source!r}  dry_run={args.dry_run}")
+    log_line(f"refresh.py start  push={args.push}  since_days={args.since_days}  "
+             f"source={args.source!r}  dry_run={args.dry_run}  force_parcels={args.force_parcels}")
+
+    # Rule 16: heartbeat staleness check at start
+    check_heartbeat_staleness()
 
     hb = load_heartbeat()
     failed: list[str] = []
 
     sources = SOURCES if not args.source else [s for s in SOURCES if s["name"] == args.source]
     for src in sources:
-        ok, meta = run_scraper(src, args.since_days, args.dry_run)
+        ok, meta = run_scraper(src, args.since_days, args.dry_run, args.force_parcels)
         rec = hb["sources"].setdefault(src["name"], {})
         if ok:
             rec["last_success"] = datetime.now(timezone.utc).isoformat()
-            rec["last_status"] = "ok"
+            rec["last_status"] = "ok" if not meta.get("skipped") else "skipped"
         else:
             rec["last_status"] = "fail"
             rec["last_error"] = meta.get("error")
             failed.append(src["name"])
+            telegram_send(
+                f"<b>[ocean-intel]</b> source FAIL: <code>{src['name']}</code>\n"
+                f"error: {meta.get('error')}"
+            )
         rec.update({k: v for k, v in meta.items() if k != "error"})
 
     hb["failed_sources"] = failed
 
+    pipeline_exit = 0
     if not args.no_pipeline:
-        ok = run_pipeline(args.dry_run)
-        if not ok:
+        pipeline_exit = run_pipeline(args.dry_run)
+        if pipeline_exit not in (0, 3):
             hb["pipeline_status"] = "fail"
             save_heartbeat(hb)
             log_line("FAIL: pipeline did not produce a valid leads.json")
             return 2
+        hb["pipeline_status"] = "ok" if pipeline_exit == 0 else "regression"
+        run_methodology(args.dry_run)
+    else:
+        hb["pipeline_status"] = "skipped"
 
-    hb["pipeline_status"] = "ok"
-    hb["last_success_timestamp"] = datetime.now(timezone.utc).isoformat()
+    # Mark heartbeat success if we wrote leads.json this run
+    if pipeline_exit == 0:
+        hb["last_success_timestamp"] = datetime.now(timezone.utc).isoformat()
     save_heartbeat(hb)
 
-    if args.push and not args.dry_run:
-        # Read tier counts from the just-built leads.json for the commit msg
+    # Rule 17: new high-signal-lead alert
+    if pipeline_exit == 0 and not args.dry_run:
+        alert_new_high_signal_leads()
+
+    if args.push and not args.dry_run and pipeline_exit == 0:
         try:
-            data = json.loads((ROOT / "data" / "leads.json").read_text(encoding="utf-8"))
-            tc = data.get("tier_counts", {})
+            data = json.loads(LEADS.read_text(encoding="utf-8"))
+            tc = data.get("pattern_counts", {})
             today = date.today().isoformat()
-            msg = f"daily refresh {today} — {tc.get('hot',0)} hot / {tc.get('warm',0)} warm / {tc.get('active',0)} active"
+            msg = (
+                f"daily refresh {today} — "
+                f"foreclosure {tc.get('foreclosure',0)}, transfer {tc.get('transfer',0)}, "
+                f"signals {data.get('total_signals',0)}, leads {data.get('lead_total',0)}"
+            )
         except Exception:
             msg = f"daily refresh {date.today().isoformat()}"
         run_git_push(msg, args.dry_run)
 
-    log_line(f"refresh.py done  failed_sources={failed}")
+    log_line(f"refresh.py done  failed_sources={failed}  pipeline_exit={pipeline_exit}")
+    if pipeline_exit == 3:
+        return 3
     if failed:
         return 1
     return 0

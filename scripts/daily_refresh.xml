@@ -2,7 +2,7 @@
 <Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
     <Author>Xcerebro AI</Author>
-    <Description>Daily refresh of Ocean County, NJ public-records intelligence pipeline. Runs scrapers, rebuilds leads.json, commits + pushes to xcerebroai/ocean-intel.</Description>
+    <Description>Daily refresh of Ocean County, NJ public-records intelligence pipeline (v2.0). Runs scrapers, rebuilds leads.json + methodology.html, commits + pushes to xcerebroai/ocean-intel. Sends Telegram alerts for source failures, run-over-run regressions, heartbeat staleness, and new high-signal leads. Parcel master scraper runs Mondays only (per Rule 25).</Description>
     <URI>\ocean-intel-refresh</URI>
   </RegistrationInfo>
   <Triggers>
@@ -17,7 +17,7 @@
   <Principals>
     <Principal id="Author">
       <UserId>DESKTOP-3GOQFT6\Owner</UserId>
-      <LogonType>InteractiveToken</LogonType>
+      <LogonType>Password</LogonType>
       <RunLevel>LeastPrivilege</RunLevel>
     </Principal>
   </Principals>
@@ -36,7 +36,7 @@
     <Enabled>true</Enabled>
     <Hidden>false</Hidden>
     <RunOnlyIfIdle>false</RunOnlyIfIdle>
-    <WakeToRun>false</WakeToRun>
+    <WakeToRun>true</WakeToRun>
     <ExecutionTimeLimit>PT4H</ExecutionTimeLimit>
     <Priority>7</Priority>
     <RestartOnFailure>

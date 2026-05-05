@@ -28,6 +28,7 @@ on/after the watermark).
 """
 from __future__ import annotations
 import argparse
+import json
 import re
 import sys
 import time
@@ -36,12 +37,17 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _base import (  # noqa: E402
-    RAW_DIR, UA, RateLimit, StopFlag, append_jsonl,
+    RAW_DIR, UA, RateLimit, RetryWithBackoff, StopFlag, append_jsonl,
     err, jsonl_path, load_state, log, reset_source, save_state,
 )
 
 import pdfplumber  # noqa: E402
 import requests  # noqa: E402
+
+# Rule 20: sheriff parser must validate >= 90% of parsed rows have block + lot
+# + mun_name. Below that, scraper exits 1 and writes data/raw/sheriff_foreclosures.qa.json.
+QA_PATH = RAW_DIR / "sheriff_foreclosures.qa.json"
+QA_MIN_VALID_PCT = 90.0
 
 SOURCE = "sheriff_foreclosures"
 DOCTYPE = "writ_of_sale"
@@ -74,14 +80,96 @@ def fetch_pdf(sess: requests.Session, url: str) -> Path:
 
 # ----- PDF parsing ------------------------------------------------------------
 
-CH_RE = re.compile(r"^CH\s+(\d+)\s*$")
-FORE_RE = re.compile(r"^([F]\d{8,})\s+DEFENDANT\s+(.*)$")
+# NJ Superior Court has multiple case types — Chancery (CH), Law (L), and
+# legacy variants. v1 only matched CH, which silently mis-routed every L-case
+# SEQ row onto the previous CH case (root cause of the v1 47% miss rate).
+CH_RE = re.compile(r"^(CH|L|DJ|F|JL)\s+(\d{4,})\s*$")
+FORE_RE = re.compile(r"^([FL]\d{6,})(?:\s+[A-Z])?\s+DEFENDANT\s+(.*)$")
 PLAINTIFF_RE = re.compile(r"^PLAINTIFF\s+(.*?)\s+\$([\d,]+\.\d{2})\s*(.*)$")
 ATTORNEY_RE = re.compile(r"^ATTORNEY\s+(.*)$")
 SEQ_RE = re.compile(r"^SEQ\s+(\d{3})\s+(.*)$")
-LOT_RE = re.compile(r"^Lot:\s*([^\s].*?)\s+Block:\s*(\S+)\s*$", re.I)
+# v2: greedy-but-non-greedy match on the lot value so multi-token lots
+# ("Lot: 47, 48, 19, 50 Block: 351", "Lot: 1 & 6 Block: 900",
+# "Lot: 20(F/K/A 21.02) Block: 12401 FKA 8") all work. End not anchored to
+# tolerate column-split zip fragments trailing the line.
+LOT_RE = re.compile(r"^Lot:\s*(.+?)\s+Block:\s*([0-9][0-9.]*)", re.I)
 ADJ_RE = re.compile(r"ADJOURNED UNTIL\s+(\d{1,2}/\d{1,2}/\d{4})", re.I)
 SALE_DATE_RE = re.compile(r"REAL ESTATE LISTING FOR\s+(\d{1,2}/\d{1,2}/\d{4})", re.I)
+# Single-digit lines after a SEQ are zip-column-split fragments (PDF columnar
+# rendering of "08008" as "8\n0\n0\n8" stacked in the rightmost column).
+ZIP_FRAGMENT_RE = re.compile(r"^\d$")
+# Known Ocean County municipality names — used to recover mun_name when the
+# heuristic split fails (see normalize_situs).
+OCEAN_MUNICIPALITIES = (
+    "BARNEGAT LIGHT", "BARNEGAT", "BAY HEAD", "BEACH HAVEN", "BEACHWOOD",
+    "BERKELEY", "BRICK", "EAGLESWOOD", "HARVEY CEDARS", "ISLAND HEIGHTS",
+    "JACKSON", "LACEY", "LAKEHURST", "LAKEWOOD", "LAVALLETTE", "LITTLE EGG HARBOR",
+    "LITTLE EGG HARB", "LONG BEACH", "MANCHESTER", "MANTOLOKING", "OCEAN GATE",
+    "OCEAN", "PINE BEACH", "PLUMSTED", "POINT PLEASANT BEACH", "POINT PLEASANT",
+    "SEASIDE HEIGHTS", "SEASIDE PARK", "SHIP BOTTOM", "SOUTH TOMS RIVER",
+    "STAFFORD", "SURF CITY", "TOMS RIVER", "TUCKERTON", "WARETOWN", "NEW EGYPT",
+    "FORKED RIVER", "MANAHAWKIN",
+    # Postal/CDP names that the sheriff uses but aren't legal munis (mapped
+    # to legal munis in the pipeline normalize_mun() pass)
+    "WHITING", "CRESTWOOD VILLAGE", "BAYVILLE", "ROOSEVELT CITY",
+)
+
+
+def parse_situs_line(addr_text: str) -> dict:
+    """Parse a SEQ address line into {situs_address, mun_name, zip5}.
+
+    Strategy that handles both clean "<addr> <mun> NJ <zip>" lines and the
+    column-split case where the trailing zip is split vertically across
+    follow-up single-digit lines (Lot/Block + zip-fragment lines).
+    """
+    out: dict = {"situs_address": None, "mun_name": None, "zip5": None}
+    cleaned = re.sub(r"\s+", " ", addr_text).strip()
+
+    # Strip parenthetical municipality qualifiers (LBI / NB / SB) — they
+    # confuse the mun-detection but aren't part of the canonical mun_name.
+    cleaned_no_paren = re.sub(r"\s*\([^)]*\)\s*", " ", cleaned).strip()
+
+    # Identify trailing "NJ <digits>" (zip may be partial — column-split case
+    # may have only "NJ 0" with the rest in zip-fragment lines below).
+    nj_match = re.search(r"\s+NJ\s+(\d{0,5})\s*$", cleaned_no_paren, re.I)
+    if nj_match:
+        out["zip5"] = nj_match.group(1) or None
+        before_nj = cleaned_no_paren[: nj_match.start()].strip()
+    else:
+        before_nj = cleaned_no_paren
+
+    # Strip "VACANT" trailing flag (LBI vacant lots).
+    before_nj = re.sub(r"\s+VACANT\s*$", "", before_nj, flags=re.I).strip()
+
+    # Find the longest known Ocean municipality name that ends `before_nj`.
+    # Iterate from longest to shortest so multi-word muns ("LONG BEACH",
+    # "POINT PLEASANT BEACH", "LITTLE EGG HARBOR") match before single-word.
+    upper_before = before_nj.upper()
+    best_mun = None
+    for cand in sorted(OCEAN_MUNICIPALITIES, key=len, reverse=True):
+        # Allow optional " TWP" suffix on cand
+        for suffix in ("", " TWP", " TOWNSHIP", " BORO", " BOROUGH", " CITY"):
+            target = cand + suffix
+            if upper_before.endswith(" " + target) or upper_before == target:
+                best_mun = target
+                break
+        if best_mun:
+            break
+
+    if best_mun:
+        out["mun_name"] = best_mun
+        end_idx = upper_before.rfind(best_mun)
+        out["situs_address"] = before_nj[:end_idx].strip() or None
+    else:
+        # Fallback: heuristic — last 2 words before NJ are the municipality
+        toks = before_nj.split()
+        if len(toks) >= 3:
+            out["situs_address"] = " ".join(toks[:-2])
+            out["mun_name"] = " ".join(toks[-2:])
+        else:
+            out["situs_address"] = before_nj or None
+
+    return out
 
 
 def parse_pdf(path: Path) -> list[dict]:
@@ -114,8 +202,11 @@ def parse_pdf(path: Path) -> list[dict]:
                     if current_seq:
                         records.append(current_seq)
                         current_seq = None
+                    case_prefix = m.group(1)
+                    case_num = m.group(2)
                     current = {
-                        "case_no": "CH " + m.group(1),
+                        "case_no": f"{case_prefix} {case_num}",
+                        "case_type": case_prefix,
                         "plaintiff": None,
                         "judgment_amount": None,
                         "status_raw": None,
@@ -158,15 +249,13 @@ def parse_pdf(path: Path) -> list[dict]:
                         records.append(current_seq)
                     seq_num = m.group(1)
                     addr_text = m.group(2).strip()
-                    # situs is everything before NJ + zip; mun is the last
-                    # uppercase tokens before NJ. Coarse parse — just keep raw
-                    # address line; pipeline can refine.
                     current_seq = {
                         "_key": f"{current['case_no']}:{seq_num}",
                         "_source": SOURCE,
                         "doc_type": DOCTYPE,
                         "sale_date": sale_date_str,
                         "case_no": current["case_no"],
+                        "case_type": current.get("case_type"),
                         "foreclosure_no": current.get("foreclosure_no"),
                         "plaintiff": current.get("plaintiff"),
                         "defendant": current.get("defendant"),
@@ -178,30 +267,25 @@ def parse_pdf(path: Path) -> list[dict]:
                         "block": None,
                         "lot": None,
                         "mun_name": None,
+                        "situs_address": None,
+                        "zip5": None,
                     }
-                    # Split "<street> <municipality> NJ <zip>". Strategy:
-                    # find the street suffix (RD, BLVD, ST, AVE, etc.) — the
-                    # token after it through "NJ" is the municipality.
-                    am = re.match(r"^(.*?\b(?:RD|ROAD|BLVD|BOULEVARD|ST|STREET|AVE|AVENUE|DR|DRIVE|LN|LANE|CT|COURT|CIR|CIRCLE|WAY|PL|PLACE|PKWY|PARKWAY|HWY|HIGHWAY|TER|TERRACE|TRL|TRAIL|CRES|CRESCENT|LOOP|RUN|XING|ALLEY|ROW|VACANT|PT|POINT|VIEW|RDG|RIDGE|RT|ROUTE|US\s*\d+|HEIGHTS|HTS)\b\.?)\s+(.+?)\s+NJ\s+(\d{5})\s*$",
-                                  addr_text, re.I)
-                    if am:
-                        current_seq["situs_address"] = am.group(1).strip()
-                        current_seq["mun_name"] = am.group(2).strip()
-                        current_seq["zip5"] = am.group(3)
-                    else:
-                        # Fallback: strip "NJ ZIP" from the end and keep everything as situs
-                        m2 = re.match(r"^(.*?)\s+NJ\s+(\d{5})\s*$", addr_text)
-                        if m2:
-                            current_seq["situs_address"] = m2.group(1).strip()
-                            current_seq["zip5"] = m2.group(2)
-                        else:
-                            current_seq["situs_address"] = addr_text
+                    parsed = parse_situs_line(addr_text)
+                    current_seq.update(parsed)
                     continue
 
                 m = LOT_RE.match(raw_line)
                 if m and current_seq:
                     current_seq["lot"] = m.group(1).strip()
                     current_seq["block"] = m.group(2).strip()
+                    continue
+
+                # Single-digit zip-fragment lines (column-split) — append to
+                # the running zip5 of the current SEQ if present.
+                if current_seq and ZIP_FRAGMENT_RE.match(raw_line):
+                    cur_zip = current_seq.get("zip5") or ""
+                    if len(cur_zip) < 5:
+                        current_seq["zip5"] = cur_zip + raw_line
                     continue
 
     if current_seq:
@@ -250,34 +334,80 @@ def main() -> int:
     sess.headers.update({"User-Agent": UA})
 
     rl = RateLimit(min_seconds=3.0)
+    retry = RetryWithBackoff(max_attempts=5, base_delay=1.0)
     flag = StopFlag()
     flag.install()
 
     rl.wait()
-    pdf_url = discover_pdf_url(sess)
+    r0 = retry.call(lambda: sess.get(LANDING, timeout=30))
+    r0.raise_for_status()
+    m = re.search(r'href="(https?://[^"]+\.pdf)"[^>]*>(?:[^<]*\bForeclosure Listing\b)', r0.text, re.I) \
+        or re.search(r'href="(https?://[^"]+\.pdf)"', r0.text)
+    if not m:
+        raise RuntimeError("Could not find Foreclosure Listing PDF link on landing page")
+    pdf_url = m.group(1)
     log(f"PDF URL: {pdf_url}")
+
     rl.wait()
-    pdf_path = fetch_pdf(sess, pdf_url)
+    r1 = retry.call(lambda: sess.get(pdf_url, timeout=60))
+    r1.raise_for_status()
+    pdf_path = RAW_DIR / "sheriff_foreclosure_listing.pdf"
+    pdf_path.write_bytes(r1.content)
     log(f"PDF: {pdf_path.name}  ({pdf_path.stat().st_size / 1024:.1f} KB)")
 
     records = parse_pdf(pdf_path)
     log(f"Parsed {len(records)} SEQ rows")
 
+    # QA gate (Rule 20). >= 90% of rows must have block + lot + mun_name.
+    quarantine = []
+    valid = []
+    for r in records:
+        if r.get("block") and r.get("lot") and r.get("mun_name"):
+            valid.append(r)
+        else:
+            quarantine.append({
+                "_key": r.get("_key"),
+                "case_no": r.get("case_no"),
+                "seq": r.get("seq"),
+                "situs_raw": r.get("situs_raw"),
+                "missing": [k for k in ("block", "lot", "mun_name") if not r.get(k)],
+            })
+    valid_pct = (100.0 * len(valid) / len(records)) if records else 100.0
+    qa = {
+        "parsed_total": len(records),
+        "valid_count": len(valid),
+        "quarantine_count": len(quarantine),
+        "valid_pct": round(valid_pct, 2),
+        "quarantine_pct": round(100.0 - valid_pct, 2),
+        "min_valid_pct_threshold": QA_MIN_VALID_PCT,
+        "quarantine": quarantine,
+        "ts": datetime.now(timezone.utc).isoformat(),
+    }
+    QA_PATH.write_text(json.dumps(qa, indent=2), encoding="utf-8")
+    log(f"QA: {len(valid)}/{len(records)} valid ({valid_pct:.1f}%)  quarantine={len(quarantine)}")
+
+    if valid_pct < QA_MIN_VALID_PCT:
+        err(f"QA FAIL: valid_pct {valid_pct:.1f}% < threshold {QA_MIN_VALID_PCT}%. See {QA_PATH}")
+        return 1
+
     if args.since:
         watermark = datetime.strptime(args.since, "%Y-%m-%d")
-        before = len(records)
-        records = [r for r in records if (parse_sale_date(r.get("sale_date")) or datetime.min) >= watermark]
-        log(f"--since {args.since}: kept {len(records)}/{before}")
+        before = len(valid)
+        valid = [r for r in valid if (parse_sale_date(r.get("sale_date")) or datetime.min) >= watermark]
+        log(f"--since {args.since}: kept {len(valid)}/{before}")
 
     if args.limit:
-        records = records[: args.limit]
+        valid = valid[: args.limit]
 
-    wrote = append_jsonl(OUTPUT, records, key_field="_key")
+    wrote = append_jsonl(OUTPUT, valid, key_field="_key")
     log(f"Wrote {wrote} new records to {OUTPUT.name}")
 
     save_state(SOURCE, {
         "pdf_url": pdf_url,
         "parsed_total": len(records),
+        "valid_count": len(valid),
+        "quarantine_count": len(quarantine),
+        "valid_pct": round(valid_pct, 2),
         "written_total": wrote,
         "completed_at": datetime.now(timezone.utc).isoformat(),
     })

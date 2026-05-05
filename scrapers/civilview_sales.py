@@ -25,7 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _base import (  # noqa: E402
-    UA, RateLimit, StopFlag, append_jsonl,
+    UA, RateLimit, RetryWithBackoff, StopFlag, append_jsonl,
     err, jsonl_path, load_state, log, reset_source, save_state,
 )
 
@@ -39,9 +39,9 @@ OUTPUT = jsonl_path(SOURCE, DOCTYPE)
 BASE = "https://salesweb.civilview.com"
 
 
-def submit_search(sess: requests.Session, county_id: str, is_open: bool) -> str:
+def submit_search(sess: requests.Session, retry: RetryWithBackoff, county_id: str, is_open: bool) -> str:
     url = f"{BASE}/Sales/SalesSearch?countyId={county_id}"
-    sess.get(url, timeout=30).raise_for_status()
+    retry.call(lambda: sess.get(url, timeout=30)).raise_for_status()
     payload = {
         "PropertyStatusDate": "",
         "MonthNumber": "0",
@@ -53,7 +53,7 @@ def submit_search(sess: requests.Session, county_id: str, is_open: bool) -> str:
         "CityDesc": "",
         "countyId": county_id,
     }
-    r = sess.post(url, data=payload, headers={"Referer": url}, timeout=60)
+    r = retry.call(lambda: sess.post(url, data=payload, headers={"Referer": url}, timeout=60))
     r.raise_for_status()
     return r.text
 
@@ -113,6 +113,7 @@ def main() -> int:
     sess.headers.update({"User-Agent": UA})
 
     rl = RateLimit(min_seconds=3.0)
+    retry = RetryWithBackoff(max_attempts=5, base_delay=1.0)
     flag = StopFlag()
     flag.install()
 
@@ -124,7 +125,7 @@ def main() -> int:
         rl.wait()
         log(f"Querying CivilView countyId={args.county_id} status={status}")
         try:
-            html = submit_search(sess, args.county_id, is_open=(status == "open"))
+            html = submit_search(sess, retry, args.county_id, is_open=(status == "open"))
         except Exception as e:
             err(f"submit failed: {e}")
             continue

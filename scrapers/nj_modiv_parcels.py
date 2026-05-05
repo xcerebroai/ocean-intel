@@ -22,9 +22,12 @@ Run:
   py -3.12 scrapers/nj_modiv_parcels.py [--limit N] [--reset] [--since YYYY-MM-DD]
 
 Daily refresh strategy:
-  --since YYYY-MM-DD applies a PCLLASTUPD watermark filter for incremental
-  pulls. Without --since, full county pull (Mondays). Idempotent — re-running
-  does not duplicate parcels (key=PAMS_PIN).
+  --since YYYY-MM-DD applies a PCLLASTUPD watermark filter. **However, recon
+  (Phase 1) found that PCLLASTUPD is populated on only 14% of records and
+  the max value is 4 months stale — i.e. this layer is not maintained for
+  per-record incremental updates.** The harness therefore runs the parcel
+  scraper **weekly on Mondays only** (full re-pull, idempotent on PAMS_PIN).
+  Tuesday–Sunday refreshes skip this scraper entirely.
 """
 from __future__ import annotations
 import argparse
@@ -36,7 +39,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _base import (  # noqa: E402
-    RAW_DIR, UA, RateLimit, StopFlag, append_jsonl,
+    RAW_DIR, UA, RateLimit, RetryWithBackoff, StopFlag, append_jsonl,
     err, jsonl_path, load_state, log, reset_source, save_state,
 )
 
@@ -112,7 +115,7 @@ def build_where(since: str | None) -> str:
     return where
 
 
-def fetch_page(sess: requests.Session, where: str, offset: int) -> list[dict]:
+def fetch_page(sess: requests.Session, retry: RetryWithBackoff, where: str, offset: int) -> list[dict]:
     params = {
         "where": where,
         "outFields": OUT_FIELDS,
@@ -122,7 +125,7 @@ def fetch_page(sess: requests.Session, where: str, offset: int) -> list[dict]:
         "resultRecordCount": str(PAGE_SIZE),
         "f": "json",
     }
-    r = sess.get(ENDPOINT, params=params, timeout=60)
+    r = retry.call(lambda: sess.get(ENDPOINT, params=params, timeout=60))
     r.raise_for_status()
     j = r.json()
     if "error" in j:
@@ -130,9 +133,9 @@ def fetch_page(sess: requests.Session, where: str, offset: int) -> list[dict]:
     return [ft.get("attributes", {}) for ft in j.get("features", [])]
 
 
-def fetch_count(sess: requests.Session, where: str) -> int:
+def fetch_count(sess: requests.Session, retry: RetryWithBackoff, where: str) -> int:
     params = {"where": where, "returnCountOnly": "true", "f": "json"}
-    r = sess.get(ENDPOINT, params=params, timeout=30)
+    r = retry.call(lambda: sess.get(ENDPOINT, params=params, timeout=30))
     r.raise_for_status()
     return int(r.json().get("count", 0))
 
@@ -156,10 +159,11 @@ def main() -> int:
     sess.headers.update({"User-Agent": UA, "Accept": "application/json"})
 
     rl = RateLimit(min_seconds=2.0)  # ArcGIS handles bursts fine; keep modest
+    retry = RetryWithBackoff(max_attempts=5, base_delay=1.0)
     flag = StopFlag()
     flag.install()
 
-    total = fetch_count(sess, where)
+    total = fetch_count(sess, retry, where)
     log(f"Total matching parcels: {total:,}")
 
     offset = state.get("offset", 0)
@@ -175,7 +179,7 @@ def main() -> int:
             break
         rl.wait()
         try:
-            page = fetch_page(sess, where, offset)
+            page = fetch_page(sess, retry, where, offset)
         except Exception as e:
             err(f"page fetch failed at offset {offset}: {e}")
             time.sleep(10)
