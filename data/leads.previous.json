@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "generated_at": "2026-05-09T09:00:14Z",
-  "source_commit": "39d1bc8",
+  "generated_at": "2026-05-10T09:00:15Z",
+  "source_commit": "ccefb18",
   "county": "Ocean",
   "state": "NJ",
   "gis_deep_link_template": "https://maps.nj.gov/arcgis/rest/services/Applications/NJ_TaxListSearch/MapServer/2/query?where=PAMS_PIN%3D%27{pid}%27&outFields=*&returnGeometry=false&f=html",
@@ -68,14 +68,14 @@
   },
   "lead_type_subtype_counts": {
     "foreclosure": {
-      "Sheriff Sale": 80
+      "Sheriff Sale": 81
     },
     "bankruptcy": {
       "Foreclosure-Stay Bankruptcy": 1
     }
   },
   "source_attach_counts": {
-    "sheriff_foreclosures": 81
+    "sheriff_foreclosures": 82
   },
   "stack_depth_distribution": {
     "1": 78,
@@ -85,16 +85,16 @@
     "5": 0,
     "6+": 0
   },
-  "total_signals": 81,
+  "total_signals": 82,
   "new_in_24h": 0,
   "most_stacked_count": 2,
   "parcel_total": 298147,
   "lead_total": 79,
   "clerk_heartbeat": {
     "verifyDate": "2026-05-07T00:00:00",
-    "lastDocumentRecordedDateTime": "05/08/2026 03:38:39 PM",
-    "lastDocumentRecordedInfo": "Book 20368 Page 528 Inst# 2026036382",
-    "fetched_at": "2026-05-09T09:00:06.313778+00:00"
+    "lastDocumentRecordedDateTime": "05/09/2026 02:44:57 PM",
+    "lastDocumentRecordedInfo": "Book 20368 Page 532 Inst# 2026036385",
+    "fetched_at": "2026-05-10T09:00:06.534443+00:00"
   },
   "clerk_ingest_status": {
     "opra_last_received": null,
@@ -4667,6 +4667,37 @@
             "status": "active",
             "situs": "60 BUTTERFLY ROAD",
             "case_type": "L"
+          },
+          "parcel_match": "1512_12401_20"
+        },
+        {
+          "_signal_id": "CH 780622:001",
+          "pattern": "foreclosure",
+          "subtype": "Sheriff Sale",
+          "doc_type": "WRIT_OF_SALE",
+          "source": "sheriff_foreclosures",
+          "date": "2026-05-12",
+          "block": "12401",
+          "lot": "20(F/K/A 21.02)",
+          "mun_name": "JACKSON",
+          "case_no": "CH 780622",
+          "case_type": "CH",
+          "foreclosure_no": "F00669625",
+          "plaintiff": "US BANK TRUST COMPANY NATIONAL ASSO",
+          "defendant": "JOHN A. KOVACS, ET ALS 06/09/2026",
+          "amount": 250620.17,
+          "status": "adjourned",
+          "situs_address": "60 BUTTERFLY ROAD",
+          "zip5": "08527",
+          "payload": {
+            "sale_date": "05/12/2026",
+            "case_no": "CH 780622",
+            "plaintiff": "US BANK TRUST COMPANY NATIONAL ASSO",
+            "defendant": "JOHN A. KOVACS, ET ALS 06/09/2026",
+            "amount": 250620.17,
+            "status": "adjourned",
+            "situs": "60 BUTTERFLY ROAD",
+            "case_type": "CH"
           },
           "parcel_match": "1512_12401_20"
         }
