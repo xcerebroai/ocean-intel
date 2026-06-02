@@ -44,7 +44,7 @@ th { background: var(--panel); color: var(--text); font-weight: 600; }
 <header>
   <p><a href="./index.html">← Back to dashboard</a></p>
   <h1>Methodology</h1>
-  <p class="muted">Ocean Intel turns 12+ public-records sources into a single tiered list of motivated-seller leads. <strong>This page is generated from the live data</strong> — no hand-written drift. Schema <code>v2.0</code>. Generated 2026-05-24T09:00:16Z (commit <code>cffb98a</code>).</p>
+  <p class="muted">Ocean Intel turns 12+ public-records sources into a single tiered list of motivated-seller leads. <strong>This page is generated from the live data</strong> — no hand-written drift. Schema <code>v2.0</code>. Generated 2026-06-02T02:43:57Z (commit <code>1da5099</code>).</p>
 </header>
 
 <div class="toc"><strong>Contents</strong>
@@ -67,7 +67,7 @@ th { background: var(--panel); color: var(--text); font-weight: 600; }
 <h2 id="what">What this is</h2>
 <p>An audit-grade index of distress signals attached to Ocean County properties. The goal is the operator's goal: surface the relatively small set of parcels where multiple <em>distinct</em> distress patterns have stacked on the same property. Stacking is more predictive than any single signal, and more honest than any black-box "motivated seller score."</p>
 <p>The pipeline is one-way: scrapers fetch raw public records, the build step joins and patterns them into <code>data/leads.json</code>, the dashboard renders it. No database, no ML, no proprietary scoring. Every count is reproducible from raw inputs. <strong>Counts on this page are the actual current numbers — no figures are hand-typed.</strong></p>
-<p>Today's snapshot: <strong>298,147 parcels</strong> indexed (enrichment lookup), <strong>110 leads</strong> after pipeline, <strong>115 total signals</strong>, <strong>0</strong> leads new in last 24h. Most-stacked parcel: <strong>2</strong> distinct lead types.</p>
+<p>Today's snapshot: <strong>298,147 parcels</strong> indexed (enrichment lookup), <strong>132 leads</strong> after pipeline, <strong>137 total signals</strong>, <strong>22</strong> leads new in last 24h. Most-stacked parcel: <strong>2</strong> distinct lead types.</p>
 
 <h2 id="unblocking-clerk-data">How leads get into this dashboard</h2>
 <p>The Ocean County Clerk's office records every recorded property instrument — deeds, mortgages, liens, judgments, foreclosure filings. <strong>Those records are the leads.</strong> Until the operator unblocks the clerk's data feed, this dashboard shows only sheriff foreclosure sales (the one source not behind reCAPTCHA).</p>
@@ -106,7 +106,7 @@ CLERK_SESSION_SEEDED_AT=2026-05-05T13:42:00Z</pre>
 <h2 id="patterns">The 11 lead-type patterns</h2>
 <table>
   <thead><tr><th>Pattern</th><th>Leads firing</th><th>TTL (days)</th></tr></thead>
-  <tbody><tr><td><span class='chip foreclosure'>Foreclosure</span></td><td>110</td><td>180</td></tr><tr><td><span class='chip tax'>Tax Distress</span></td><td>0</td><td>never</td></tr><tr><td><span class='chip lien'>Liens</span></td><td>0</td><td>never</td></tr><tr><td><span class='chip estate'>Estate / Probate</span></td><td>0</td><td>365</td></tr><tr><td><span class='chip code'>Code / Condemnation</span></td><td>0</td><td>365</td></tr><tr><td><span class='chip transfer'>Distressed Transfer</span></td><td>0</td><td>1,095</td></tr><tr><td><span class='chip bankruptcy'>Bankruptcy</span></td><td>1</td><td>720</td></tr><tr><td><span class='chip divorce'>Divorce</span></td><td>0</td><td>720</td></tr><tr><td><span class='chip eviction'>Eviction</span></td><td>0</td><td>365</td></tr><tr><td><span class='chip tired_landlord'>Tired Landlord</span></td><td>0</td><td>365</td></tr><tr><td><span class='chip surplus_owed'>Surplus Owed</span></td><td>0</td><td>1,825</td></tr></tbody>
+  <tbody><tr><td><span class='chip foreclosure'>Foreclosure</span></td><td>132</td><td>180</td></tr><tr><td><span class='chip tax'>Tax Distress</span></td><td>0</td><td>never</td></tr><tr><td><span class='chip lien'>Liens</span></td><td>0</td><td>never</td></tr><tr><td><span class='chip estate'>Estate / Probate</span></td><td>0</td><td>365</td></tr><tr><td><span class='chip code'>Code / Condemnation</span></td><td>0</td><td>365</td></tr><tr><td><span class='chip transfer'>Distressed Transfer</span></td><td>0</td><td>1,095</td></tr><tr><td><span class='chip bankruptcy'>Bankruptcy</span></td><td>1</td><td>720</td></tr><tr><td><span class='chip divorce'>Divorce</span></td><td>0</td><td>720</td></tr><tr><td><span class='chip eviction'>Eviction</span></td><td>0</td><td>365</td></tr><tr><td><span class='chip tired_landlord'>Tired Landlord</span></td><td>0</td><td>365</td></tr><tr><td><span class='chip surplus_owed'>Surplus Owed</span></td><td>0</td><td>1,825</td></tr></tbody>
 </table>
 <p class="muted">"TTL (days)" = signal expires after N days of age. <code>never</code> = structural condition that doesn't expire (tax delinquency, liens). Expired signals are removed by the pipeline; leads with zero remaining signals are dropped from <code>leads.json</code> entirely (no phantom records — Rule 23).</p>
 
@@ -114,14 +114,14 @@ CLERK_SESSION_SEEDED_AT=2026-05-05T13:42:00Z</pre>
 <p>Each lead-type pattern has one or more subtypes. The chip tooltip in the dashboard shows the most recent subtype per pattern per lead. Counts below are derived directly from <code>data/leads.json</code>.</p>
 <table>
   <thead><tr><th>Pattern</th><th>Subtype</th><th>Count</th></tr></thead>
-  <tbody><tr><td><span class='chip foreclosure'>Foreclosure</span></td><td>Sheriff Sale</td><td>114</td></tr><tr><td><span class='chip bankruptcy'>Bankruptcy</span></td><td>Foreclosure-Stay Bankruptcy</td><td>1</td></tr></tbody>
+  <tbody><tr><td><span class='chip foreclosure'>Foreclosure</span></td><td>Sheriff Sale</td><td>136</td></tr><tr><td><span class='chip bankruptcy'>Bankruptcy</span></td><td>Foreclosure-Stay Bankruptcy</td><td>1</td></tr></tbody>
 </table>
 
 <h2 id="attributes">The 9 parcel attributes</h2>
 <p>State-driven (no timestamps), shown as small icons on each row in the dashboard. Each cell's "Count" reflects the actual number of leads with that attribute firing today.</p>
 <table>
   <thead><tr><th>Attribute</th><th>Count</th><th>Derivation rule</th></tr></thead>
-  <tbody><tr><td>Vacant</td><td>0</td><td>Cannot be derived from MOD-IV alone — requires USPS vacancy or utility shutoff feed. Reserved in schema for v3 plug-in.</td></tr><tr><td>Absentee</td><td>59</td><td>Mailing-address city differs from situs municipality (after normalizing TWP/BORO).</td></tr><tr><td>Out-of-state</td><td>0</td><td>Mailing-address state ≠ NJ.</td></tr><tr><td>Senior owner</td><td>0</td><td>Proxy: long-term ownership AND last-year tax bill &lt; 50% of expected (~1.4% of net assessed). Real signal requires the bulk MOD-IV deduction codes.</td></tr><tr><td>Long-term owned</td><td>59</td><td>Years owned (computed from DEED_DATE) ≥ 15.</td></tr><tr><td>Free-and-clear</td><td>0</td><td>Requires clerk_search to enumerate active mortgages — currently blocked. Field always false until OPRA bulk extract lands.</td></tr><tr><td>High equity</td><td>19</td><td>Proxy: assessed_value ≥ 2× last_sale_price AND ≥5 years owned. Wired for AVM substitution later.</td></tr><tr><td>Entity-owned</td><td>0</td><td>Owner regex matches LLC|INC|CORP|TRUST|LP|LTD|CO|COMPANY|HOLDINGS|ASSOCIATES|PARTNERS. Owner names mostly redacted upstream — fallback uses mailing-address line.</td></tr><tr><td>Multiple properties</td><td>0</td><td>Owner name appears as registered owner on ≥3 parcels. Requires owner names — blocked until clerk OPRA.</td></tr></tbody>
+  <tbody><tr><td>Vacant</td><td>0</td><td>Cannot be derived from MOD-IV alone — requires USPS vacancy or utility shutoff feed. Reserved in schema for v3 plug-in.</td></tr><tr><td>Absentee</td><td>69</td><td>Mailing-address city differs from situs municipality (after normalizing TWP/BORO).</td></tr><tr><td>Out-of-state</td><td>5</td><td>Mailing-address state ≠ NJ.</td></tr><tr><td>Senior owner</td><td>0</td><td>Proxy: long-term ownership AND last-year tax bill &lt; 50% of expected (~1.4% of net assessed). Real signal requires the bulk MOD-IV deduction codes.</td></tr><tr><td>Long-term owned</td><td>71</td><td>Years owned (computed from DEED_DATE) ≥ 15.</td></tr><tr><td>Free-and-clear</td><td>0</td><td>Requires clerk_search to enumerate active mortgages — currently blocked. Field always false until OPRA bulk extract lands.</td></tr><tr><td>High equity</td><td>22</td><td>Proxy: assessed_value ≥ 2× last_sale_price AND ≥5 years owned. Wired for AVM substitution later.</td></tr><tr><td>Entity-owned</td><td>0</td><td>Owner regex matches LLC|INC|CORP|TRUST|LP|LTD|CO|COMPANY|HOLDINGS|ASSOCIATES|PARTNERS. Owner names mostly redacted upstream — fallback uses mailing-address line.</td></tr><tr><td>Multiple properties</td><td>0</td><td>Owner name appears as registered owner on ≥3 parcels. Requires owner names — blocked until clerk OPRA.</td></tr></tbody>
 </table>
 
 <h2 id="match-modes">Match modes (ANY / ALL / 2+ / 3+)</h2>
@@ -137,7 +137,7 @@ CLERK_SESSION_SEEDED_AT=2026-05-05T13:42:00Z</pre>
 <p>v1.0 grouped leads into Hot / Warm / Active tiers based on stack depth. v2.0 drops the tier labels (operators told us they wanted to build their own stacks via the filter rail). Stack depth is preserved as a column (<code>pattern_count</code>) and as a sort option ("Most signals"). The most-stacked parcel today fires <strong>2</strong> distinct lead types.</p>
 <table>
   <thead><tr><th>Stack depth</th><th>Lead count</th></tr></thead>
-  <tbody><tr><td>1</td><td>109</td></tr><tr><td>2</td><td>1</td></tr><tr><td>3</td><td>0</td></tr><tr><td>4</td><td>0</td></tr><tr><td>5</td><td>0</td></tr><tr><td>6+</td><td>0</td></tr></tbody>
+  <tbody><tr><td>1</td><td>131</td></tr><tr><td>2</td><td>1</td></tr><tr><td>3</td><td>0</td></tr><tr><td>4</td><td>0</td></tr><tr><td>5</td><td>0</td></tr><tr><td>6+</td><td>0</td></tr></tbody>
 </table>
 
 <h2 id="ttl">TTL rules (signal expiry)</h2>
@@ -146,15 +146,15 @@ CLERK_SESSION_SEEDED_AT=2026-05-05T13:42:00Z</pre>
 <h2 id="sources">Source inventory (live, from HEARTBEAT.json)</h2>
 <table>
   <thead><tr><th>Source</th><th>Last status</th><th>Last success</th><th>Signals attached</th></tr></thead>
-  <tbody><tr><td><code>nj_modiv_parcels</code></td><td>skipped</td><td>2026-05-23T09:00:01.731252+00:00</td><td>0</td></tr><tr><td><code>sheriff_foreclosures</code></td><td>ok</td><td>2026-05-23T09:00:05.535099+00:00</td><td>115</td></tr><tr><td><code>civilview_sales</code></td><td>ok</td><td>2026-05-23T09:00:06.680775+00:00</td><td>0</td></tr><tr><td><code>clerk_metadata</code></td><td>ok</td><td>2026-05-23T09:00:12.950000+00:00</td><td>0</td></tr><tr><td><code>clerk_seeded</code></td><td>skipped</td><td>2026-05-23T09:00:12.950000+00:00</td><td>0</td></tr><tr><td><code>clerk_opra_ingest</code></td><td>ok</td><td>2026-05-23T09:00:13.001000+00:00</td><td>0</td></tr></tbody>
+  <tbody><tr><td><code>nj_modiv_parcels</code></td><td>skipped</td><td>2026-05-24T09:00:02.176309+00:00</td><td>0</td></tr><tr><td><code>sheriff_foreclosures</code></td><td>ok</td><td>2026-05-24T09:00:05.916425+00:00</td><td>137</td></tr><tr><td><code>civilview_sales</code></td><td>ok</td><td>2026-05-24T09:00:07.186858+00:00</td><td>0</td></tr><tr><td><code>clerk_metadata</code></td><td>ok</td><td>2026-05-24T09:00:13.747315+00:00</td><td>0</td></tr><tr><td><code>clerk_seeded</code></td><td>skipped</td><td>2026-05-24T09:00:13.747315+00:00</td><td>0</td></tr><tr><td><code>clerk_opra_ingest</code></td><td>ok</td><td>2026-05-24T09:00:13.800469+00:00</td><td>0</td></tr></tbody>
 </table>
 <div class="note">
 Detailed source inventory — including blocked sources, anti-bot encounters, and OPRA fallback paths — lives in <a href="https://github.com/xcerebroai/ocean-intel/blob/main/RECON.md" target="_blank">RECON.md</a> on GitHub.
 </div>
-<p>Sheriff parser QA: <strong>33/33 valid (100.0%)</strong>. Threshold ≥90.0%. Quarantine count: 0.</p>
+<p>Sheriff parser QA: <strong>88/88 valid (100.0%)</strong>. Threshold ≥90.0%. Quarantine count: 0.</p>
 
 <h2 id="two-truths">Two-Truths invariant</h2>
-<p>The dashboard's stat tiles ("Total: 110, Foreclosure: 110, Tax: 0, …") and the rendered table rows are derived from <em>the same</em> <code>matches(lead)</code> function. There is no separate counter, no parallel filter pipeline. The single source of truth is enforced two ways:</p>
+<p>The dashboard's stat tiles ("Total: 132, Foreclosure: 132, Tax: 0, …") and the rendered table rows are derived from <em>the same</em> <code>matches(lead)</code> function. There is no separate counter, no parallel filter pipeline. The single source of truth is enforced two ways:</p>
 <ol>
   <li>In <code>pipeline/build_leads.py</code> — before <code>leads.json</code> is written, the header's <code>pattern_counts</code>, <code>attribute_counts</code>, <code>lead_type_subtype_counts</code>, <code>stack_depth_distribution</code>, <code>total_signals</code>, and <code>most_stacked_count</code> are recomputed by walking the records list. If they disagree, the pipeline raises and exits non-zero. <code>leads.json</code> is never written with drifted counts.</li>
   <li>In the dashboard — the table body, the lead-type stat tiles, and the quality stat tiles all call <code>RECORDS.filter(matches)</code>. There is no parallel filter logic.</li>
