@@ -44,7 +44,7 @@ th { background: var(--panel); color: var(--text); font-weight: 600; }
 <header>
   <p><a href="./index.html">← Back to dashboard</a></p>
   <h1>Methodology</h1>
-  <p class="muted">Ocean Intel turns 12+ public-records sources into a single tiered list of motivated-seller leads. <strong>This page is generated from the live data</strong> — no hand-written drift. Schema <code>v2.0</code>. Generated 2026-06-02T09:00:14Z (commit <code>d192580</code>).</p>
+  <p class="muted">Ocean Intel turns 12+ public-records sources into a single tiered list of motivated-seller leads. <strong>This page is generated from the live data</strong> — no hand-written drift. Schema <code>v2.0</code>. Generated 2026-06-03T09:00:15Z (commit <code>4bfeb2e</code>).</p>
 </header>
 
 <div class="toc"><strong>Contents</strong>
@@ -67,7 +67,7 @@ th { background: var(--panel); color: var(--text); font-weight: 600; }
 <h2 id="what">What this is</h2>
 <p>An audit-grade index of distress signals attached to Ocean County properties. The goal is the operator's goal: surface the relatively small set of parcels where multiple <em>distinct</em> distress patterns have stacked on the same property. Stacking is more predictive than any single signal, and more honest than any black-box "motivated seller score."</p>
 <p>The pipeline is one-way: scrapers fetch raw public records, the build step joins and patterns them into <code>data/leads.json</code>, the dashboard renders it. No database, no ML, no proprietary scoring. Every count is reproducible from raw inputs. <strong>Counts on this page are the actual current numbers — no figures are hand-typed.</strong></p>
-<p>Today's snapshot: <strong>298,147 parcels</strong> indexed (enrichment lookup), <strong>132 leads</strong> after pipeline, <strong>137 total signals</strong>, <strong>22</strong> leads new in last 24h. Most-stacked parcel: <strong>2</strong> distinct lead types.</p>
+<p>Today's snapshot: <strong>298,147 parcels</strong> indexed (enrichment lookup), <strong>132 leads</strong> after pipeline, <strong>137 total signals</strong>, <strong>0</strong> leads new in last 24h. Most-stacked parcel: <strong>2</strong> distinct lead types.</p>
 
 <h2 id="unblocking-clerk-data">How leads get into this dashboard</h2>
 <p>The Ocean County Clerk's office records every recorded property instrument — deeds, mortgages, liens, judgments, foreclosure filings. <strong>Those records are the leads.</strong> Until the operator unblocks the clerk's data feed, this dashboard shows only sheriff foreclosure sales (the one source not behind reCAPTCHA).</p>
@@ -146,7 +146,7 @@ CLERK_SESSION_SEEDED_AT=2026-05-05T13:42:00Z</pre>
 <h2 id="sources">Source inventory (live, from HEARTBEAT.json)</h2>
 <table>
   <thead><tr><th>Source</th><th>Last status</th><th>Last success</th><th>Signals attached</th></tr></thead>
-  <tbody><tr><td><code>nj_modiv_parcels</code></td><td>ok</td><td>2026-06-02T02:43:41.720453+00:00</td><td>0</td></tr><tr><td><code>sheriff_foreclosures</code></td><td>ok</td><td>2026-06-02T02:43:45.494679+00:00</td><td>137</td></tr><tr><td><code>civilview_sales</code></td><td>ok</td><td>2026-06-02T02:43:46.610028+00:00</td><td>0</td></tr><tr><td><code>clerk_metadata</code></td><td>ok</td><td>2026-06-02T02:43:52.894890+00:00</td><td>0</td></tr><tr><td><code>clerk_seeded</code></td><td>skipped</td><td>2026-06-02T02:43:52.895891+00:00</td><td>0</td></tr><tr><td><code>clerk_opra_ingest</code></td><td>ok</td><td>2026-06-02T02:43:52.944891+00:00</td><td>0</td></tr></tbody>
+  <tbody><tr><td><code>nj_modiv_parcels</code></td><td>skipped</td><td>2026-06-02T09:00:01.512118+00:00</td><td>0</td></tr><tr><td><code>sheriff_foreclosures</code></td><td>ok</td><td>2026-06-02T09:00:05.200609+00:00</td><td>137</td></tr><tr><td><code>civilview_sales</code></td><td>ok</td><td>2026-06-02T09:00:06.094086+00:00</td><td>0</td></tr><tr><td><code>clerk_metadata</code></td><td>ok</td><td>2026-06-02T09:00:12.327222+00:00</td><td>0</td></tr><tr><td><code>clerk_seeded</code></td><td>skipped</td><td>2026-06-02T09:00:12.328218+00:00</td><td>0</td></tr><tr><td><code>clerk_opra_ingest</code></td><td>ok</td><td>2026-06-02T09:00:12.376218+00:00</td><td>0</td></tr></tbody>
 </table>
 <div class="note">
 Detailed source inventory — including blocked sources, anti-bot encounters, and OPRA fallback paths — lives in <a href="https://github.com/xcerebroai/ocean-intel/blob/main/RECON.md" target="_blank">RECON.md</a> on GitHub.
