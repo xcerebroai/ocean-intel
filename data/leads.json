@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "generated_at": "2026-06-05T09:00:16Z",
-  "source_commit": "6db45bb",
+  "generated_at": "2026-06-06T09:00:16Z",
+  "source_commit": "61d2f74",
   "county": "Ocean",
   "state": "NJ",
   "gis_deep_link_template": "https://maps.nj.gov/arcgis/rest/services/Applications/NJ_TaxListSearch/MapServer/2/query?where=PAMS_PIN%3D%27{pid}%27&outFields=*&returnGeometry=false&f=html",
@@ -68,14 +68,14 @@
   },
   "lead_type_subtype_counts": {
     "foreclosure": {
-      "Sheriff Sale": 136
+      "Sheriff Sale": 140
     },
     "bankruptcy": {
       "Foreclosure-Stay Bankruptcy": 1
     }
   },
   "source_attach_counts": {
-    "sheriff_foreclosures": 137
+    "sheriff_foreclosures": 141
   },
   "stack_depth_distribution": {
     "1": 131,
@@ -85,16 +85,16 @@
     "5": 0,
     "6+": 0
   },
-  "total_signals": 137,
+  "total_signals": 141,
   "new_in_24h": 0,
   "most_stacked_count": 2,
   "parcel_total": 298147,
   "lead_total": 132,
   "clerk_heartbeat": {
-    "verifyDate": "2026-06-03T00:00:00",
-    "lastDocumentRecordedDateTime": "06/04/2026 07:07:09 PM",
-    "lastDocumentRecordedInfo": "Book 20394 Page 1591 Inst# 2026044115",
-    "fetched_at": "2026-06-05T09:00:07.344771+00:00"
+    "verifyDate": "2026-06-04T00:00:00",
+    "lastDocumentRecordedDateTime": "06/05/2026 03:46:18 PM",
+    "lastDocumentRecordedInfo": "Book 20396 Page 493 Inst# 2026044552",
+    "fetched_at": "2026-06-06T09:00:07.515407+00:00"
   },
   "clerk_ingest_status": {
     "opra_last_received": null,
@@ -3553,7 +3553,7 @@
       "deed_page": "01752",
       "calc_acre": 0.18,
       "dwell": 1,
-      "years_owned": 7,
+      "years_owned": 8,
       "patterns": [
         "foreclosure"
       ],
@@ -8991,6 +8991,37 @@
             "case_type": "L"
           },
           "parcel_match": "1508_597_45"
+        },
+        {
+          "_signal_id": "CH 780669:001",
+          "pattern": "foreclosure",
+          "subtype": "Sheriff Sale",
+          "doc_type": "WRIT_OF_SALE",
+          "source": "sheriff_foreclosures",
+          "date": "2026-06-09",
+          "block": "597",
+          "lot": "45,46,47,48",
+          "mun_name": "TOMS RIVER",
+          "case_no": "CH 780669",
+          "case_type": "CH",
+          "foreclosure_no": null,
+          "plaintiff": "EQUITY MANAGEMENT GROUP, LLC",
+          "defendant": null,
+          "amount": 1365.44,
+          "status": "active",
+          "situs_address": "395 CASTLEBUONO AVENUE",
+          "zip5": "08753",
+          "payload": {
+            "sale_date": "06/09/2026",
+            "case_no": "CH 780669",
+            "plaintiff": "EQUITY MANAGEMENT GROUP, LLC",
+            "defendant": null,
+            "amount": 1365.44,
+            "status": "active",
+            "situs": "395 CASTLEBUONO AVENUE",
+            "case_type": "CH"
+          },
+          "parcel_match": "1508_597_45"
         }
       ],
       "last_signal_date": "2026-06-09",
@@ -9062,6 +9093,37 @@
             "status": "active",
             "situs": "1045 SALERNO AVENUE",
             "case_type": "L"
+          },
+          "parcel_match": "1508_596_203"
+        },
+        {
+          "_signal_id": "CH 780669:002",
+          "pattern": "foreclosure",
+          "subtype": "Sheriff Sale",
+          "doc_type": "WRIT_OF_SALE",
+          "source": "sheriff_foreclosures",
+          "date": "2026-06-09",
+          "block": "596",
+          "lot": "203, 204",
+          "mun_name": "TOMS RIVER",
+          "case_no": "CH 780669",
+          "case_type": "CH",
+          "foreclosure_no": null,
+          "plaintiff": "EQUITY MANAGEMENT GROUP, LLC",
+          "defendant": null,
+          "amount": 1365.44,
+          "status": "active",
+          "situs_address": "1045 SALERNO AVENUE",
+          "zip5": "08753",
+          "payload": {
+            "sale_date": "06/09/2026",
+            "case_no": "CH 780669",
+            "plaintiff": "EQUITY MANAGEMENT GROUP, LLC",
+            "defendant": null,
+            "amount": 1365.44,
+            "status": "active",
+            "situs": "1045 SALERNO AVENUE",
+            "case_type": "CH"
           },
           "parcel_match": "1508_596_203"
         }
@@ -9137,6 +9199,37 @@
             "case_type": "L"
           },
           "parcel_match": "1508_596_206"
+        },
+        {
+          "_signal_id": "CH 780669:003",
+          "pattern": "foreclosure",
+          "subtype": "Sheriff Sale",
+          "doc_type": "WRIT_OF_SALE",
+          "source": "sheriff_foreclosures",
+          "date": "2026-06-09",
+          "block": "596",
+          "lot": "206, 207",
+          "mun_name": "TOMS RIVER",
+          "case_no": "CH 780669",
+          "case_type": "CH",
+          "foreclosure_no": null,
+          "plaintiff": "EQUITY MANAGEMENT GROUP, LLC",
+          "defendant": null,
+          "amount": 1365.44,
+          "status": "active",
+          "situs_address": "SALERNO AVENUE VACANT LAND",
+          "zip5": "08753",
+          "payload": {
+            "sale_date": "06/09/2026",
+            "case_no": "CH 780669",
+            "plaintiff": "EQUITY MANAGEMENT GROUP, LLC",
+            "defendant": null,
+            "amount": 1365.44,
+            "status": "active",
+            "situs": "SALERNO AVENUE VACANT LAND",
+            "case_type": "CH"
+          },
+          "parcel_match": "1508_596_206"
         }
       ],
       "last_signal_date": "2026-06-09",
@@ -9208,6 +9301,37 @@
             "status": "active",
             "situs": "CIPRIANO AVENUE VACANT LAND",
             "case_type": "L"
+          },
+          "parcel_match": "1508_596_217"
+        },
+        {
+          "_signal_id": "CH 780669:004",
+          "pattern": "foreclosure",
+          "subtype": "Sheriff Sale",
+          "doc_type": "WRIT_OF_SALE",
+          "source": "sheriff_foreclosures",
+          "date": "2026-06-09",
+          "block": "596",
+          "lot": "217",
+          "mun_name": "TOMS RIVER",
+          "case_no": "CH 780669",
+          "case_type": "CH",
+          "foreclosure_no": null,
+          "plaintiff": "EQUITY MANAGEMENT GROUP, LLC",
+          "defendant": null,
+          "amount": 1365.44,
+          "status": "active",
+          "situs_address": "CIPRIANO AVENUE VACANT LAND",
+          "zip5": "08753",
+          "payload": {
+            "sale_date": "06/09/2026",
+            "case_no": "CH 780669",
+            "plaintiff": "EQUITY MANAGEMENT GROUP, LLC",
+            "defendant": null,
+            "amount": 1365.44,
+            "status": "active",
+            "situs": "CIPRIANO AVENUE VACANT LAND",
+            "case_type": "CH"
           },
           "parcel_match": "1508_596_217"
         }
