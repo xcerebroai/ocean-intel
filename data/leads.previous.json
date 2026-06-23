@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "generated_at": "2026-06-18T09:00:15Z",
-  "source_commit": "47275de",
+  "generated_at": "2026-06-22T18:06:19Z",
+  "source_commit": "aef9cd7",
   "county": "Ocean",
   "state": "NJ",
   "gis_deep_link_template": "https://maps.nj.gov/arcgis/rest/services/Applications/NJ_TaxListSearch/MapServer/2/query?where=PAMS_PIN%3D%27{pid}%27&outFields=*&returnGeometry=false&f=html",
@@ -91,10 +91,10 @@
   "parcel_total": 298147,
   "lead_total": 148,
   "clerk_heartbeat": {
-    "verifyDate": "2026-06-16T00:00:00",
-    "lastDocumentRecordedDateTime": "06/17/2026 04:09:44 PM",
-    "lastDocumentRecordedInfo": "Book 20408 Page 89 Inst# 2026048235",
-    "fetched_at": "2026-06-18T09:00:06.539317+00:00"
+    "verifyDate": "2026-06-18T00:00:00",
+    "lastDocumentRecordedDateTime": "06/22/2026 02:03:36 PM",
+    "lastDocumentRecordedInfo": "Book 20411 Page 647 Inst# 2026049204",
+    "fetched_at": "2026-06-22T18:06:08.905791+00:00"
   },
   "clerk_ingest_status": {
     "opra_last_received": null,
@@ -5113,7 +5113,7 @@
       "deed_page": "01365",
       "calc_acre": 0.13770000000000002,
       "dwell": 1,
-      "years_owned": 8,
+      "years_owned": 9,
       "patterns": [
         "foreclosure"
       ],
@@ -7288,7 +7288,7 @@
       "deed_page": "00004",
       "calc_acre": 0.4,
       "dwell": 1,
-      "years_owned": 38,
+      "years_owned": 39,
       "patterns": [
         "foreclosure"
       ],
@@ -7676,7 +7676,7 @@
       "deed_page": "01721",
       "calc_acre": 0.0863,
       "dwell": 1,
-      "years_owned": 20,
+      "years_owned": 21,
       "patterns": [
         "foreclosure"
       ],
