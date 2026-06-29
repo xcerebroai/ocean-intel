@@ -1,46 +1,46 @@
 {
-  "last_success_timestamp": "2026-06-28T09:00:16.051541+00:00",
+  "last_success_timestamp": "2026-06-29T09:00:21.437065+00:00",
   "pipeline_status": "ok",
   "sources": {
     "nj_modiv_parcels": {
-      "last_success": "2026-06-28T09:00:01.658209+00:00",
-      "last_status": "skipped",
+      "last_success": "2026-06-29T09:00:07.724874+00:00",
+      "last_status": "ok",
       "records": 298147,
       "dry_run": true,
       "skipped": "weekly_cadence",
-      "elapsed_s": 5.276945
+      "elapsed_s": 6.091351
     },
     "sheriff_foreclosures": {
-      "last_success": "2026-06-28T09:00:05.400811+00:00",
+      "last_success": "2026-06-29T09:00:11.342797+00:00",
       "last_status": "ok",
       "records": 77,
       "dry_run": true,
-      "elapsed_s": 3.740605
+      "elapsed_s": 3.615923
     },
     "civilview_sales": {
-      "last_success": "2026-06-28T09:00:06.848953+00:00",
+      "last_success": "2026-06-29T09:00:12.208671+00:00",
       "last_status": "ok",
       "records": 0,
       "dry_run": true,
-      "elapsed_s": 1.446145
+      "elapsed_s": 0.862871
     },
     "clerk_metadata": {
-      "last_success": "2026-06-28T09:00:13.094468+00:00",
+      "last_success": "2026-06-29T09:00:18.424604+00:00",
       "last_status": "ok",
       "records": 1,
       "dry_run": true,
-      "elapsed_s": 6.244514
+      "elapsed_s": 6.214933
     },
     "clerk_seeded": {
-      "last_success": "2026-06-28T09:00:13.094468+00:00",
+      "last_success": "2026-06-29T09:00:18.424604+00:00",
       "last_status": "skipped",
       "skipped": "env_not_configured"
     },
     "clerk_opra_ingest": {
-      "last_success": "2026-06-28T09:00:13.149467+00:00",
+      "last_success": "2026-06-29T09:00:18.477899+00:00",
       "last_status": "ok",
       "dry_run": true,
-      "elapsed_s": 0.053002
+      "elapsed_s": 0.052296
     }
   },
   "failed_sources": []
