@@ -1,4 +1,4 @@
-[2026-06-23T09:00:01.465569+00:00]
+[2026-07-14T22:27:10.576587+00:00]
 <b>[ocean-intel]</b> heartbeat stale
-last_success_timestamp = 2026-06-19T09:00:15.202816+00:00
-age = 96.0h > 36h threshold
+last_success_timestamp = 2026-07-11T09:00:15.746281+00:00
+age = 85.4h > 36h threshold
