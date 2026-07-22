@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "generated_at": "2026-07-21T09:00:15Z",
-  "source_commit": "198c93d",
+  "generated_at": "2026-07-22T09:00:14Z",
+  "source_commit": "d1acf7f",
   "county": "Ocean",
   "state": "NJ",
   "gis_deep_link_template": "https://maps.nj.gov/arcgis/rest/services/Applications/NJ_TaxListSearch/MapServer/2/query?where=PAMS_PIN%3D%27{pid}%27&outFields=*&returnGeometry=false&f=html",
@@ -43,7 +43,7 @@
     "surplus_owed": 1825
   },
   "pattern_counts": {
-    "foreclosure": 174,
+    "foreclosure": 175,
     "tax": 0,
     "lien": 0,
     "estate": 0,
@@ -68,33 +68,33 @@
   },
   "lead_type_subtype_counts": {
     "foreclosure": {
-      "Sheriff Sale": 182
+      "Sheriff Sale": 183
     },
     "bankruptcy": {
       "Foreclosure-Stay Bankruptcy": 1
     }
   },
   "source_attach_counts": {
-    "sheriff_foreclosures": 183
+    "sheriff_foreclosures": 184
   },
   "stack_depth_distribution": {
-    "1": 173,
+    "1": 174,
     "2": 1,
     "3": 0,
     "4": 0,
     "5": 0,
     "6+": 0
   },
-  "total_signals": 183,
-  "new_in_24h": 0,
+  "total_signals": 184,
+  "new_in_24h": 1,
   "most_stacked_count": 2,
   "parcel_total": 298147,
-  "lead_total": 174,
+  "lead_total": 175,
   "clerk_heartbeat": {
-    "verifyDate": "2026-07-17T00:00:00",
-    "lastDocumentRecordedDateTime": "07/20/2026 05:59:11 PM",
-    "lastDocumentRecordedInfo": "Book 20442 Page 656 Inst# 2026058082",
-    "fetched_at": "2026-07-21T09:00:06.797852+00:00"
+    "verifyDate": "2026-07-20T00:00:00",
+    "lastDocumentRecordedDateTime": "07/21/2026 05:11:48 PM",
+    "lastDocumentRecordedInfo": "Book 20443 Page 1175 Inst# 2026058442",
+    "fetched_at": "2026-07-22T09:00:06.022221+00:00"
   },
   "clerk_ingest_status": {
     "opra_last_received": null,
@@ -12644,6 +12644,67 @@
       ],
       "last_signal_date": "2026-07-21",
       "is_new_in_24h": false
+    },
+    {
+      "pid": "orphan:sheriff_foreclosures:L 780675:29-19",
+      "block": "29",
+      "lot": "19",
+      "qualifier": null,
+      "owner": null,
+      "mun_name": "PLUMSTED TWP.",
+      "mun_code": null,
+      "county": "OCEAN",
+      "situs_address": "31 OAKFORD AVENUE",
+      "mailing_address": null,
+      "mailing_city_state": null,
+      "mailing_zip": null,
+      "year_built": null,
+      "assessed_value": null,
+      "last_sale_price": null,
+      "last_sale_date": null,
+      "years_owned": null,
+      "patterns": [
+        "foreclosure"
+      ],
+      "pattern_count": 1,
+      "attributes": [],
+      "attribute_count": 0,
+      "parcel_match": null,
+      "signals": [
+        {
+          "_signal_id": "L 780675:001",
+          "pattern": "foreclosure",
+          "subtype": "Sheriff Sale",
+          "doc_type": "WRIT_OF_SALE",
+          "source": "sheriff_foreclosures",
+          "date": "2026-07-21",
+          "block": "29",
+          "lot": "19",
+          "mun_name": "PLUMSTED TWP.",
+          "case_no": "L 780675",
+          "case_type": "L",
+          "foreclosure_no": "F01174025",
+          "plaintiff": "PENNYMAC LOAN SERVICES, LLC",
+          "defendant": "DEBORAH J. PAONE, ET AL 08/25/2026",
+          "amount": 116490.57,
+          "status": "adjourned",
+          "situs_address": "31 OAKFORD AVENUE",
+          "zip5": "08533",
+          "payload": {
+            "sale_date": "07/21/2026",
+            "case_no": "L 780675",
+            "plaintiff": "PENNYMAC LOAN SERVICES, LLC",
+            "defendant": "DEBORAH J. PAONE, ET AL 08/25/2026",
+            "amount": 116490.57,
+            "status": "adjourned",
+            "situs": "31 OAKFORD AVENUE",
+            "case_type": "L"
+          },
+          "parcel_match": null
+        }
+      ],
+      "last_signal_date": "2026-07-21",
+      "is_new_in_24h": true
     }
   ]
 }
