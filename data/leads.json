@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "generated_at": "2026-07-23T09:00:15Z",
-  "source_commit": "e923a89",
+  "generated_at": "2026-07-24T09:00:15Z",
+  "source_commit": "3790118",
   "county": "Ocean",
   "state": "NJ",
   "gis_deep_link_template": "https://maps.nj.gov/arcgis/rest/services/Applications/NJ_TaxListSearch/MapServer/2/query?where=PAMS_PIN%3D%27{pid}%27&outFields=*&returnGeometry=false&f=html",
@@ -86,15 +86,15 @@
     "6+": 0
   },
   "total_signals": 210,
-  "new_in_24h": 26,
+  "new_in_24h": 25,
   "most_stacked_count": 2,
   "parcel_total": 298147,
   "lead_total": 200,
   "clerk_heartbeat": {
-    "verifyDate": "2026-07-21T00:00:00",
-    "lastDocumentRecordedDateTime": "07/22/2026 05:58:32 PM",
-    "lastDocumentRecordedInfo": "Book 20445 Page 1012 Inst# 2026058982",
-    "fetched_at": "2026-07-23T09:00:06.939904+00:00"
+    "verifyDate": "2026-07-22T00:00:00",
+    "lastDocumentRecordedDateTime": "07/23/2026 03:46:45 PM",
+    "lastDocumentRecordedInfo": "Book 20447 Page 154 Inst# 2026059411",
+    "fetched_at": "2026-07-24T09:00:06.906764+00:00"
   },
   "clerk_ingest_status": {
     "opra_last_received": null,
@@ -14445,7 +14445,7 @@
         }
       ],
       "last_signal_date": "2026-07-21",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "orphan:sheriff_foreclosures:CH 775815:1.148-22,23,24,25",
