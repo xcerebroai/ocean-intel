@@ -44,7 +44,7 @@ th { background: var(--panel); color: var(--text); font-weight: 600; }
 <header>
   <p><a href="./index.html">← Back to dashboard</a></p>
   <h1>Methodology</h1>
-  <p class="muted">Ocean Intel turns 12+ public-records sources into a single tiered list of motivated-seller leads. <strong>This page is generated from the live data</strong> — no hand-written drift. Schema <code>v2.0</code>. Generated 2026-08-05T09:00:17Z (commit <code>f6b21ca</code>).</p>
+  <p class="muted">Ocean Intel turns 12+ public-records sources into a single tiered list of motivated-seller leads. <strong>This page is generated from the live data</strong> — no hand-written drift. Schema <code>v2.0</code>. Generated 2026-08-06T09:00:17Z (commit <code>598ae88</code>).</p>
 </header>
 
 <div class="toc"><strong>Contents</strong>
@@ -121,7 +121,7 @@ CLERK_SESSION_SEEDED_AT=2026-05-05T13:42:00Z</pre>
 <p>State-driven (no timestamps), shown as small icons on each row in the dashboard. Each cell's "Count" reflects the actual number of leads with that attribute firing today.</p>
 <table>
   <thead><tr><th>Attribute</th><th>Count</th><th>Derivation rule</th></tr></thead>
-  <tbody><tr><td>Vacant</td><td>0</td><td>Cannot be derived from MOD-IV alone — requires USPS vacancy or utility shutoff feed. Reserved in schema for v3 plug-in.</td></tr><tr><td>Absentee</td><td>89</td><td>Mailing-address city differs from situs municipality (after normalizing TWP/BORO).</td></tr><tr><td>Out-of-state</td><td>7</td><td>Mailing-address state ≠ NJ.</td></tr><tr><td>Senior owner</td><td>0</td><td>Proxy: long-term ownership AND last-year tax bill &lt; 50% of expected (~1.4% of net assessed). Real signal requires the bulk MOD-IV deduction codes.</td></tr><tr><td>Long-term owned</td><td>100</td><td>Years owned (computed from DEED_DATE) ≥ 15.</td></tr><tr><td>Free-and-clear</td><td>0</td><td>Requires clerk_search to enumerate active mortgages — currently blocked. Field always false until OPRA bulk extract lands.</td></tr><tr><td>High equity</td><td>42</td><td>Proxy: assessed_value ≥ 2× last_sale_price AND ≥5 years owned. Wired for AVM substitution later.</td></tr><tr><td>Entity-owned</td><td>0</td><td>Owner regex matches LLC|INC|CORP|TRUST|LP|LTD|CO|COMPANY|HOLDINGS|ASSOCIATES|PARTNERS. Owner names mostly redacted upstream — fallback uses mailing-address line.</td></tr><tr><td>Multiple properties</td><td>0</td><td>Owner name appears as registered owner on ≥3 parcels. Requires owner names — blocked until clerk OPRA.</td></tr></tbody>
+  <tbody><tr><td>Vacant</td><td>0</td><td>Cannot be derived from MOD-IV alone — requires USPS vacancy or utility shutoff feed. Reserved in schema for v3 plug-in.</td></tr><tr><td>Absentee</td><td>89</td><td>Mailing-address city differs from situs municipality (after normalizing TWP/BORO).</td></tr><tr><td>Out-of-state</td><td>7</td><td>Mailing-address state ≠ NJ.</td></tr><tr><td>Senior owner</td><td>0</td><td>Proxy: long-term ownership AND last-year tax bill &lt; 50% of expected (~1.4% of net assessed). Real signal requires the bulk MOD-IV deduction codes.</td></tr><tr><td>Long-term owned</td><td>101</td><td>Years owned (computed from DEED_DATE) ≥ 15.</td></tr><tr><td>Free-and-clear</td><td>0</td><td>Requires clerk_search to enumerate active mortgages — currently blocked. Field always false until OPRA bulk extract lands.</td></tr><tr><td>High equity</td><td>42</td><td>Proxy: assessed_value ≥ 2× last_sale_price AND ≥5 years owned. Wired for AVM substitution later.</td></tr><tr><td>Entity-owned</td><td>0</td><td>Owner regex matches LLC|INC|CORP|TRUST|LP|LTD|CO|COMPANY|HOLDINGS|ASSOCIATES|PARTNERS. Owner names mostly redacted upstream — fallback uses mailing-address line.</td></tr><tr><td>Multiple properties</td><td>0</td><td>Owner name appears as registered owner on ≥3 parcels. Requires owner names — blocked until clerk OPRA.</td></tr></tbody>
 </table>
 
 <h2 id="match-modes">Match modes (ANY / ALL / 2+ / 3+)</h2>
@@ -146,12 +146,12 @@ CLERK_SESSION_SEEDED_AT=2026-05-05T13:42:00Z</pre>
 <h2 id="sources">Source inventory (live, from HEARTBEAT.json)</h2>
 <table>
   <thead><tr><th>Source</th><th>Last status</th><th>Last success</th><th>Signals attached</th></tr></thead>
-  <tbody><tr><td><code>nj_modiv_parcels</code></td><td>skipped</td><td>2026-08-05T00:21:45.780820+00:00</td><td>0</td></tr><tr><td><code>sheriff_foreclosures</code></td><td>ok</td><td>2026-08-05T00:21:51.669698+00:00</td><td>210</td></tr><tr><td><code>civilview_sales</code></td><td>ok</td><td>2026-08-05T00:21:52.822081+00:00</td><td>0</td></tr><tr><td><code>clerk_metadata</code></td><td>ok</td><td>2026-08-05T00:21:59.303846+00:00</td><td>0</td></tr><tr><td><code>clerk_seeded</code></td><td>skipped</td><td>2026-08-05T00:21:59.317983+00:00</td><td>0</td></tr><tr><td><code>clerk_opra_ingest</code></td><td>ok</td><td>2026-08-05T00:21:59.403141+00:00</td><td>0</td></tr></tbody>
+  <tbody><tr><td><code>nj_modiv_parcels</code></td><td>skipped</td><td>2026-08-05T09:00:01.842981+00:00</td><td>0</td></tr><tr><td><code>sheriff_foreclosures</code></td><td>ok</td><td>2026-08-05T09:00:05.620618+00:00</td><td>210</td></tr><tr><td><code>civilview_sales</code></td><td>ok</td><td>2026-08-05T09:00:07.266284+00:00</td><td>0</td></tr><tr><td><code>clerk_metadata</code></td><td>ok</td><td>2026-08-05T09:00:13.544126+00:00</td><td>0</td></tr><tr><td><code>clerk_seeded</code></td><td>skipped</td><td>2026-08-05T09:00:13.544629+00:00</td><td>0</td></tr><tr><td><code>clerk_opra_ingest</code></td><td>ok</td><td>2026-08-05T09:00:13.597113+00:00</td><td>0</td></tr></tbody>
 </table>
 <div class="note">
 Detailed source inventory — including blocked sources, anti-bot encounters, and OPRA fallback paths — lives in <a href="https://github.com/xcerebroai/ocean-intel/blob/main/RECON.md" target="_blank">RECON.md</a> on GitHub.
 </div>
-<p>Sheriff parser QA: <strong>50/50 valid (100.0%)</strong>. Threshold ≥90.0%. Quarantine count: 0.</p>
+<p>Sheriff parser QA: <strong>49/49 valid (100.0%)</strong>. Threshold ≥90.0%. Quarantine count: 0.</p>
 
 <h2 id="two-truths">Two-Truths invariant</h2>
 <p>The dashboard's stat tiles ("Total: 200, Foreclosure: 200, Tax: 0, …") and the rendered table rows are derived from <em>the same</em> <code>matches(lead)</code> function. There is no separate counter, no parallel filter pipeline. The single source of truth is enforced two ways:</p>
