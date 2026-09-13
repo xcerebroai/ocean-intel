@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "generated_at": "2026-09-11T09:00:15Z",
-  "source_commit": "ad29173",
+  "generated_at": "2026-09-12T09:00:15Z",
+  "source_commit": "8ef6599",
   "county": "Ocean",
   "state": "NJ",
   "gis_deep_link_template": "https://maps.nj.gov/arcgis/rest/services/Applications/NJ_TaxListSearch/MapServer/2/query?where=PAMS_PIN%3D%27{pid}%27&outFields=*&returnGeometry=false&f=html",
@@ -60,7 +60,7 @@
     "absentee": 107,
     "out_of_state": 7,
     "senior_owner": 0,
-    "long_term_owned": 131,
+    "long_term_owned": 132,
     "free_and_clear": 0,
     "high_equity": 58,
     "entity_owned": 0,
@@ -91,10 +91,10 @@
   "parcel_total": 298601,
   "lead_total": 268,
   "clerk_heartbeat": {
-    "verifyDate": "2026-09-09T00:00:00",
-    "lastDocumentRecordedDateTime": "09/10/2026 03:47:09 PM",
-    "lastDocumentRecordedInfo": "Book 20496 Page 1061 Inst# 2026073746",
-    "fetched_at": "2026-09-11T09:00:07.212224+00:00"
+    "verifyDate": "2026-09-10T00:00:00",
+    "lastDocumentRecordedDateTime": "09/11/2026 05:28:55 PM",
+    "lastDocumentRecordedInfo": "Book 20498 Page 419 Inst# 2026074223",
+    "fetched_at": "2026-09-12T09:00:07.175534+00:00"
   },
   "clerk_ingest_status": {
     "opra_last_received": null,
@@ -9365,7 +9365,7 @@
       "deed_page": "01141",
       "calc_acre": 0.272,
       "dwell": 1,
-      "years_owned": 23,
+      "years_owned": 24,
       "patterns": [
         "foreclosure"
       ],
@@ -12907,7 +12907,7 @@
       "deed_page": "00949",
       "calc_acre": 0,
       "dwell": 1,
-      "years_owned": 15,
+      "years_owned": 16,
       "patterns": [
         "foreclosure"
       ],
@@ -17013,13 +17013,15 @@
       "deed_page": "00548",
       "calc_acre": 0.2059,
       "dwell": 1,
-      "years_owned": 14,
+      "years_owned": 15,
       "patterns": [
         "foreclosure"
       ],
       "pattern_count": 1,
-      "attributes": [],
-      "attribute_count": 0,
+      "attributes": [
+        "long_term_owned"
+      ],
+      "attribute_count": 1,
       "signals": [
         {
           "_signal_id": "CH 780739:001",
