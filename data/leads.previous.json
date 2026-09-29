@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "generated_at": "2026-09-27T09:00:17Z",
-  "source_commit": "07b6695",
+  "generated_at": "2026-09-28T09:00:24Z",
+  "source_commit": "778ae45",
   "county": "Ocean",
   "state": "NJ",
   "gis_deep_link_template": "https://maps.nj.gov/arcgis/rest/services/Applications/NJ_TaxListSearch/MapServer/2/query?where=PAMS_PIN%3D%27{pid}%27&outFields=*&returnGeometry=false&f=html",
@@ -92,9 +92,9 @@
   "lead_total": 287,
   "clerk_heartbeat": {
     "verifyDate": "2026-09-24T00:00:00",
-    "lastDocumentRecordedDateTime": "09/26/2026 10:36:51 AM",
-    "lastDocumentRecordedInfo": "Book 20513 Page 91 Inst# 2026078397",
-    "fetched_at": "2026-09-27T09:00:06.963816+00:00"
+    "lastDocumentRecordedDateTime": "09/27/2026 04:08:41 PM",
+    "lastDocumentRecordedInfo": "Book 20513 Page 92 Inst# 2026078398",
+    "fetched_at": "2026-09-28T09:00:13.819280+00:00"
   },
   "clerk_ingest_status": {
     "opra_last_received": null,
@@ -15986,7 +15986,7 @@
       "deed_page": "01906",
       "calc_acre": 0.2296,
       "dwell": 1,
-      "years_owned": 2,
+      "years_owned": 3,
       "patterns": [
         "foreclosure"
       ],
