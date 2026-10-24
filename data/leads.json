@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "generated_at": "2026-10-23T09:00:41Z",
-  "source_commit": "9298b2e",
+  "generated_at": "2026-10-24T09:00:44Z",
+  "source_commit": "c611bc7",
   "county": "Ocean",
   "state": "NJ",
   "gis_deep_link_template": "https://maps.nj.gov/arcgis/rest/services/Applications/NJ_TaxListSearch/MapServer/2/query?where=PAMS_PIN%3D%27{pid}%27&outFields=*&returnGeometry=false&f=html",
@@ -86,15 +86,15 @@
     "6+": 0
   },
   "total_signals": 349,
-  "new_in_24h": 30,
+  "new_in_24h": 0,
   "most_stacked_count": 2,
   "parcel_total": 298601,
   "lead_total": 335,
   "clerk_heartbeat": {
-    "verifyDate": "2026-10-21T00:00:00",
-    "lastDocumentRecordedDateTime": "10/22/2026 05:36:27 PM",
-    "lastDocumentRecordedInfo": "Book 20539 Page 31 Inst# 2026085834",
-    "fetched_at": "2026-10-23T09:00:06.551647+00:00"
+    "verifyDate": "2026-10-22T00:00:00",
+    "lastDocumentRecordedDateTime": "10/23/2026 04:56:05 PM",
+    "lastDocumentRecordedInfo": "Book 20540 Page 353 Inst# 2026086128",
+    "fetched_at": "2026-10-24T09:00:07.253627+00:00"
   },
   "clerk_ingest_status": {
     "opra_last_received": null,
@@ -15419,7 +15419,7 @@
       "deed_page": "00182",
       "calc_acre": 0.0723,
       "dwell": 1,
-      "years_owned": 25,
+      "years_owned": 26,
       "patterns": [
         "foreclosure"
       ],
@@ -19903,7 +19903,7 @@
       "deed_page": "01205",
       "calc_acre": 0.51,
       "dwell": 1,
-      "years_owned": 17,
+      "years_owned": 18,
       "patterns": [
         "foreclosure"
       ],
@@ -21067,7 +21067,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1507_507_17",
@@ -21136,7 +21136,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1506_1841.18_10",
@@ -21207,7 +21207,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1519_1.236_26",
@@ -21280,7 +21280,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1515_1449_13.15",
@@ -21351,7 +21351,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1514_16_24",
@@ -21422,7 +21422,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1515_189.01_8.06",
@@ -21524,7 +21524,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1508_192.34_7",
@@ -21595,7 +21595,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1517_326.103_28",
@@ -21664,7 +21664,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1508_135.02_4",
@@ -21735,7 +21735,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1517_326.100_73",
@@ -21806,7 +21806,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1531_44.106_31",
@@ -21878,7 +21878,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1531_296_72",
@@ -21949,7 +21949,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1531_32_1",
@@ -22020,7 +22020,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1512_8001_5.374",
@@ -22089,7 +22089,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1524_55_87",
@@ -22162,7 +22162,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1507_625_22",
@@ -22233,7 +22233,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1506_1053_11",
@@ -22306,7 +22306,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1508_443.02_19",
@@ -22378,7 +22378,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1508_533.08_18",
@@ -22447,7 +22447,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1533_14.01_1",
@@ -22518,7 +22518,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1519_75.103_13",
@@ -22591,7 +22591,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1515_235_24.06",
@@ -22662,7 +22662,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1507_768_9",
@@ -22733,7 +22733,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1512_10901_11",
@@ -22807,7 +22807,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "1530_21.05_15",
@@ -22876,7 +22876,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "orphan:sheriff_foreclosures:CH 780617:931.1-18 AND 18.1",
@@ -23913,7 +23913,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "orphan:sheriff_foreclosures:CH 780779:625-22,23,24.01",
@@ -23974,7 +23974,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "orphan:sheriff_foreclosures:CH 780794:708-35,36,37,38,39",
@@ -24035,7 +24035,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     },
     {
       "pid": "orphan:sheriff_foreclosures:CH 780797:11.21-9FKA35,36,37,38",
@@ -24096,7 +24096,7 @@
         }
       ],
       "last_signal_date": "2026-11-17",
-      "is_new_in_24h": true
+      "is_new_in_24h": false
     }
   ]
 }
