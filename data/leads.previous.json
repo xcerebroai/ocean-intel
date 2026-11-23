@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "generated_at": "2026-11-21T10:00:16Z",
-  "source_commit": "08255e6",
+  "generated_at": "2026-11-22T10:00:18Z",
+  "source_commit": "2235ad6",
   "county": "Ocean",
   "state": "NJ",
   "gis_deep_link_template": "https://maps.nj.gov/arcgis/rest/services/Applications/NJ_TaxListSearch/MapServer/2/query?where=PAMS_PIN%3D%27{pid}%27&outFields=*&returnGeometry=false&f=html",
@@ -92,9 +92,9 @@
   "lead_total": 258,
   "clerk_heartbeat": {
     "verifyDate": "2026-11-19T00:00:00",
-    "lastDocumentRecordedDateTime": "11/20/2026 03:37:47 PM",
-    "lastDocumentRecordedInfo": "Book 20566 Page 1133 Inst# 2026093770",
-    "fetched_at": "2026-11-21T10:00:07.786425+00:00"
+    "lastDocumentRecordedDateTime": "11/21/2026 07:09:08 PM",
+    "lastDocumentRecordedInfo": "Book 20566 Page 1136 Inst# 2026093773",
+    "fetched_at": "2026-11-22T10:00:07.148219+00:00"
   },
   "clerk_ingest_status": {
     "opra_last_received": null,
